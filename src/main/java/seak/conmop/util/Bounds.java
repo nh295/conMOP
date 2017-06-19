@@ -1,0 +1,39 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package seak.conmop.util;
+
+/**
+ * An object to store the upper and lower bounds of an interval
+ * @author nhitomi
+ * @param <T>
+ */
+public class Bounds<T extends Comparable<T>> {
+    
+    private final T upperBound;
+    
+    private final T lowerBound;
+
+    public Bounds(T lowerBound, T upperBound) {
+        
+        //check that the lower bound is lower than the upper bound using natural ordering
+        if(upperBound.compareTo(lowerBound) < 0){
+            throw new IllegalArgumentException("Upperbound is less than the lowerbound");
+        }
+        
+        this.upperBound = upperBound;
+        this.lowerBound = lowerBound;
+    }
+
+    public T getUpperBound() {
+        return upperBound;
+    }
+
+    public T getLowerBound() {
+        return lowerBound;
+    }
+   
+    
+}
