@@ -5,15 +5,19 @@
  */
 package seak.conmop.variable;
 
+import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
 import seak.conmop.util.Bounds;
 
 /**
  * Variable for the satellite
+ *
  * @author nhitomi
  */
 public class SatelliteVariable implements Variable {
-    
+
+    private static final long serialVersionUID = -7659983869462960260L;
+
     /**
      * The bounds on the semi major axis
      */
@@ -43,30 +47,50 @@ public class SatelliteVariable implements Variable {
      * The bounds on the true anomaly
      */
     private final Bounds<Double> anomBound;
-    
-    private final Double sma;
-    
-    private final Double ecc;
-    
-    private final Double inc;
-    
-    private final Double argPer;
-    
-    private final Double raan;
-    
-    private final Double anom;
+
+    private Double sma;
+
+    private Double ecc;
+
+    private Double inc;
+
+    private Double argPer;
+
+    private Double raan;
+
+    private Double anom;
 
     /**
-     * Creates 
-     * @param smaBound
-     * @param eccBound
-     * @param incBound
-     * @param argPerBound
-     * @param raanBound
-     * @param anomBound 
+     * Creates a new variable for a satellite. Assumes all valid values are
+     * allowed for argument of perigee, right ascension of the ascending node,
+     * and true anomaly.
+     *
+     * @param smaBound The bounds on the semi major axis [m]
+     * @param eccBound The bounds on the eccentricity
+     * @param incBound The bounds on the inclination [rad]
      */
-    public SatelliteVariable(Bounds<Double> smaBound, Bounds<Double> eccBound, 
-            Bounds<Double> incBound, Bounds<Double> argPerBound, 
+    public SatelliteVariable(Bounds<Double> smaBound, Bounds<Double> eccBound,
+            Bounds<Double> incBound) {
+        this(smaBound, eccBound, incBound,
+                new Bounds<>(0.0, 2. * Math.PI),
+                new Bounds<>(0.0, 2. * Math.PI),
+                new Bounds<>(0.0, 2. * Math.PI));
+    }
+
+    /**
+     * Creates a new variable for a satellite.
+     *
+     * @param smaBound The bounds on the semi major axis [m]
+     * @param eccBound The bounds on the eccentricity
+     * @param incBound The bounds on the inclination [rad]
+     * @param argPerBound The bounds on the argument of perigee [rad]
+     * @param raanBound The bounds on the right ascension of the ascending node
+     * [rad]
+     * @param anomBound The bounds on the true anomaly [rad]
+     */
+    public SatelliteVariable(
+            Bounds<Double> smaBound, Bounds<Double> eccBound,
+            Bounds<Double> incBound, Bounds<Double> argPerBound,
             Bounds<Double> raanBound, Bounds<Double> anomBound) {
         this.smaBound = smaBound;
         this.eccBound = eccBound;
@@ -81,18 +105,240 @@ public class SatelliteVariable implements Variable {
         this.raan = Double.NaN;
         this.anom = Double.NaN;
     }
-    
-    
-    
-    
+
+    /**
+     * Copies the fields of the given satellite variable and creates a new
+     * instance of a satellite.
+     *
+     * @param var the satellite variable to copy
+     */
+    protected SatelliteVariable(SatelliteVariable var) {
+        this.smaBound = var.smaBound;
+        this.eccBound = var.eccBound;
+        this.incBound = var.incBound;
+        this.argPerBound = var.argPerBound;
+        this.raanBound = var.raanBound;
+        this.anomBound = var.anomBound;
+        this.sma = var.getSma();
+        this.ecc = var.getEcc();
+        this.inc = var.getInc();
+        this.argPer = var.getArgPer();
+        this.raan = var.getRaan();
+        this.anom = var.getTrueAnomaly();
+    }
+
+    /**
+     * Gets the semimajor axis [m]
+     *
+     * @return the semimajor axis [m]
+     */
+    public Double getSma() {
+        return sma;
+    }
+
+    /**
+     * Sets the semimajor axis [m]
+     *
+     * @param sma the semimajor axis [m]
+     */
+    public void setSma(Double sma) {
+        if (smaBound.inBounds(sma)) {
+            this.sma = sma;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given semi-major axis (%f)m is out of bounds ([%f,%f])m",
+                    sma, smaBound.getLowerBound(), smaBound.getUpperBound()));
+        }
+    }
+
+    /**
+     * Sets the eccentricity
+     *
+     * @return the eccentricity
+     */
+    public Double getEcc() {
+        return ecc;
+    }
+
+    /**
+     * Gets the eccentricity
+     *
+     * @param ecc the eccentricity
+     */
+    public void setEcc(Double ecc) {
+        if (eccBound.inBounds(ecc)) {
+            this.ecc = ecc;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given eccentricity (%f) is out of bounds ([%f,%f])",
+                    ecc, eccBound.getLowerBound(), eccBound.getUpperBound()));
+        }
+    }
+
+    /**
+     * Gets the inclination [rad]
+     *
+     * @return the inclination [rad]
+     */
+    public Double getInc() {
+        return inc;
+    }
+
+    /**
+     * Sets the inclination [rad]
+     *
+     * @param inc the inclination [rad]
+     */
+    public void setInc(Double inc) {
+        if (incBound.inBounds(inc)) {
+            this.inc = inc;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given inclination (%f)rad is out of bounds ([%f,%f])rad",
+                    inc, incBound.getLowerBound(), incBound.getUpperBound()));
+        }
+    }
+
+    /**
+     * Gets the argument of perigee [rad]
+     *
+     * @return the argument of perigee [rad]
+     */
+    public Double getArgPer() {
+        return argPer;
+    }
+
+    /**
+     * Sets the argument of perigee [rad]
+     *
+     * @param argPer the argument of perigee [rad]
+     */
+    public void setArgPer(Double argPer) {
+        if (argPerBound.inBounds(argPer)) {
+            this.argPer = argPer;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given argument of perigee (%f)rad is out of bounds ([%f,%f])rad",
+                    argPer, argPerBound.getLowerBound(), argPerBound.getUpperBound()));
+        }
+    }
+
+    /**
+     * Gets the right ascension of the ascending node [rad]
+     *
+     * @return the right ascension of the ascending node [rad]
+     */
+    public Double getRaan() {
+        return raan;
+    }
+
+    /**
+     * Sets the right ascension of the ascending node [rad]
+     *
+     * @param raan the right ascension of the ascending node [rad]
+     */
+    public void setRaan(Double raan) {
+        if (raanBound.inBounds(raan)) {
+            this.raan = raan;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given right ascension of the ascending node (%f)rad is out of bounds ([%f,%f])rad",
+                    raan, raanBound.getLowerBound(), raanBound.getUpperBound()));
+        }
+    }
+
+    /**
+     * Gets the true anomaly [rad]
+     *
+     * @return the true anomaly [rad]
+     */
+    public Double getTrueAnomaly() {
+        return anom;
+    }
+
+    /**
+     * Sets the true anomaly [rad]
+     *
+     * @param anom the true anomaly [rad]
+     */
+    public void setTrueAnomaly(Double anom) {
+        if (anomBound.inBounds(anom)) {
+            this.anom = anom;
+        } else {
+            throw new IllegalArgumentException(String.format(
+                    "Given true anomaly (%f)rad is out of bounds ([%f,%f])rad",
+                    anom, anomBound.getLowerBound(), anomBound.getUpperBound()));
+        }
+    }
 
     @Override
     public Variable copy() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new SatelliteVariable(this);
     }
 
     @Override
     public void randomize() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.setTrueAnomaly(PRNG.nextDouble(anomBound.getLowerBound(), anomBound.getUpperBound()));
+        this.setArgPer(PRNG.nextDouble(argPerBound.getLowerBound(), argPerBound.getUpperBound()));
+        this.setEcc(PRNG.nextDouble(eccBound.getLowerBound(), eccBound.getUpperBound()));
+        this.setInc(PRNG.nextDouble(incBound.getLowerBound(), incBound.getUpperBound()));
+        this.setRaan(PRNG.nextDouble(raanBound.getLowerBound(), raanBound.getUpperBound()));
+        this.setSma(PRNG.nextDouble(smaBound.getLowerBound(), smaBound.getUpperBound()));
+    }
+
+    /**
+     * Gets the bounds for an allowable semi-major axis [m]
+     *
+     * @return the bounds for an allowable semi-major axis [m]
+     */
+    public Bounds<Double> getSmaBound() {
+        return smaBound;
+    }
+
+    /**
+     * Gets the bounds for an allowable eccentricity
+     *
+     * @return the bounds for an allowable eccentricity
+     */
+    public Bounds<Double> getEccBound() {
+        return eccBound;
+    }
+
+    /**
+     * Gets the bounds for an allowable inclination [rad]
+     *
+     * @return the bounds for an allowable inclination [rad]
+     */
+    public Bounds<Double> getIncBound() {
+        return incBound;
+    }
+
+    /**
+     * Gets the bounds for an allowable argument of perigee [rad]
+     *
+     * @return the bounds for an allowable argument of perigee [rad]
+     */
+    public Bounds<Double> getArgPerBound() {
+        return argPerBound;
+    }
+
+    /**
+     * Gets the bounds for an allowable right ascension of the ascending node
+     * [rad]
+     *
+     * @return the bounds for an allowable right ascension of the ascending node
+     * [rad]
+     */
+    public Bounds<Double> getRaanBound() {
+        return raanBound;
+    }
+
+    /**
+     * Gets the bounds for an allowable true anomaly [rad]
+     *
+     * @return the bounds for an allowable true anomaly [rad]
+     */
+    public Bounds<Double> getAnomBound() {
+        return anomBound;
     }
 }

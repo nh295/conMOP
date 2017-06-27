@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Logger;
 import org.moeaframework.algorithm.EpsilonMOEA;
-import org.moeaframework.algorithm.StandardAlgorithms;
 import org.moeaframework.core.EpsilonBoxDominanceArchive;
 import org.moeaframework.core.Initialization;
 import org.moeaframework.core.Population;
@@ -56,7 +55,7 @@ public class Search {
         TimeScale utc = TimeScalesFactory.getUTC();
         AbsoluteDate startDate = new AbsoluteDate(2016, 1, 1, 00, 00, 00.000, utc);
         AbsoluteDate endDate = new AbsoluteDate(2016, 1, 10, 00, 00, 00.000, utc);
-
+        
         //Enter satellite orbital parameters
         double a = 6978137.0;
 

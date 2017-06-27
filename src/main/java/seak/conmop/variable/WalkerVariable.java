@@ -7,6 +7,7 @@ package seak.conmop.variable;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.hipparchus.util.FastMath;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
 import seak.conmop.util.Bounds;
@@ -17,7 +18,9 @@ import seak.conmop.util.Factor;
  *
  * @author nhitomi
  */
-public class WalkerVariable implements Variable {
+public class WalkerVariable extends ConstellationVariable {
+
+    private static final long serialVersionUID = 4317728591290279354L;
 
     /**
      * The bounds allowable on the total number of satellites
@@ -49,24 +52,50 @@ public class WalkerVariable implements Variable {
      */
     private Integer f;
 
-    public WalkerVariable(Bounds<Integer> tBound, Bounds<Integer> pBound, Bounds<Integer> fBound) {
+    /**
+     * The semi-major axis of the Walker constellation [m]
+     */
+    private Double sma;
+
+    /**
+     * The inclination of the Walker constellation [rad]
+     */
+    private Double inc;
+
+    /**
+     * Initializes an empty Walker constellation (t=0, p=0, f=0) and declares
+     * the allowable bounds on t, p, and f
+     *
+     * @param smaBound the bounds on the semi-major axis [m]
+     * @param incBound the bounds on the inclination [rad]
+     * @param tBound the bounds on the number of satellites allowed in the
+     * constellation
+     * @param pBound the bounds on the number of planes allowed in the
+     * constellation
+     * @param fBound the bounds on the phasing number allowed for the
+     * constellation
+     */
+    public WalkerVariable(Bounds<Double> smaBound, Bounds<Double> incBound,
+            Bounds<Integer> tBound, Bounds<Integer> pBound, Bounds<Integer> fBound) {
+        super(tBound, smaBound, new Bounds(0.0, 0.0), incBound);
         this.tBound = tBound;
         this.pBound = pBound;
         this.fBound = fBound;
-        this.t = null;
-        this.p = null;
-        this.f = null;
+        this.sma = null;
+        this.inc = null;
     }
 
-    public WalkerVariable(int t, int p, int f, Bounds<Integer> tBound, Bounds<Integer> pBound, Bounds<Integer> fBound) {
-        this.tBound = tBound;
-        this.pBound = pBound;
-        this.fBound = fBound;
-        this.t = t;
-        this.p = p;
-        this.f = f;
-
-        checkFeasible(t, p, f);
+    /**
+     * Copies the fields of the given constellation variable and creates a new
+     * instance of a constellation.
+     *
+     * @param var the constellation variable to copy
+     */
+    protected WalkerVariable(WalkerVariable var) {
+        super(var);
+        this.tBound = var.tBound;
+        this.pBound = var.pBound;
+        this.fBound = var.fBound;
     }
 
     /**
@@ -94,6 +123,64 @@ public class WalkerVariable implements Variable {
         }
     }
 
+    /**
+     * Sets the t, p, and f values that define the Walker constellation. The
+     * position of all satellites are based on the anchor satellite. This method
+     * assumes that the right ascension of the ascending node and the true
+     * anomaly of the anchor satellite is 0.0 radians.
+     *
+     * @param sma the semi-major axis of the Walker constellation [m[
+     * @param inc the inclination of the Walker constellation [rad]
+     * @param t the total number of satellites in the constellation
+     * @param p the number of planes in the constellation. p must be a divisor
+     * of t
+     * @param f the phasing value. f must be in the range [0,p-1].
+     */
+    public final void setWalker(double sma, double inc, int t, int p, int f) {
+        setWalker(sma, inc, t, p, f, 0.0, 0.0);
+    }
+
+    /**
+     * Sets the t, p, and f values that define the Walker constellation. The
+     * position of all satellites are based on the anchor satellite.
+     *
+     * @param sma the semi-major axis of the Walker constellation [m[
+     * @param inc the inclination of the Walker constellation [rad]
+     * @param t the total number of satellites in the constellation
+     * @param p the number of planes in the constellation. p must be a divisor
+     * of t
+     * @param f the phasing value. f must be in the range [0,p-1].
+     * @param refRaan the right ascension of the ascending node [rad] of the
+     * anchor satellite
+     * @param refAnom the true anomaly [rad] of the anchor satellite
+     */
+    public final void setWalker(double sma, double inc, int t, int p, int f, double refRaan, double refAnom) {
+        checkFeasible(t, p, f);
+
+        //Uses Walker delta pattern
+        final int s = t / p; //number of satellites per plane
+        final double pu = 2 * FastMath.PI / t; //pattern unit
+        final double delAnom = pu * p; //in plane spacing between satellites
+        final double delRaan = pu * s; //node spacing
+        final double phasing = pu * f;
+
+        final ArrayList<SatelliteVariable> satelliteVariables = new ArrayList(t);
+        for (int planeNum = 0; planeNum < p; planeNum++) {
+            for (int satNum = 0; satNum < s; satNum++) {
+                //since eccentricity = 0, doesn't matter if using true or mean anomaly
+                SatelliteVariable var = createSatelliteVariable();
+                var.setSma(sma);
+                var.setEcc(0.0);
+                var.setInc(inc);
+                var.setArgPer(0.0);
+                var.setRaan(refRaan + planeNum * delRaan);
+                var.setTrueAnomaly(refAnom + satNum * delAnom + phasing * planeNum);
+                satelliteVariables.add(var);
+            }
+        }
+        setSatelliteVariables(satelliteVariables);
+    }
+
     public int getT() {
         return t;
     }
@@ -108,7 +195,7 @@ public class WalkerVariable implements Variable {
 
     @Override
     public Variable copy() {
-        return new WalkerVariable(t, p, f, tBound, pBound, fBound);
+        return new WalkerVariable(this);
     }
 
     @Override

@@ -28,7 +28,6 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 import seak.conmop.util.Bounds;
-import seak.conmop.variable.IConstellationVariable;
 import seak.conmop.variable.WalkerVariable;
 import seak.orekit.constellations.Walker;
 import seak.orekit.coverage.analysis.AnalysisMetric;
@@ -39,7 +38,6 @@ import seak.orekit.event.EventAnalysisFactory;
 import seak.orekit.event.FieldOfViewEventAnalysis;
 import seak.orekit.object.Constellation;
 import seak.orekit.object.CoverageDefinition;
-import seak.orekit.object.CoveragePoint;
 import seak.orekit.object.Instrument;
 import seak.orekit.object.Satellite;
 import seak.orekit.object.fieldofview.NadirSimpleConicalFOV;
@@ -158,7 +156,7 @@ public class WalkerOptimizer extends AbstractProblem {
 
     @Override
     public void evaluate(Solution solution) {
-
+        
         ArrayList<Constellation> constellations = new ArrayList();
         
         RealVariable sma = (RealVariable) solution.getVariable(0);
@@ -199,9 +197,7 @@ public class WalkerOptimizer extends AbstractProblem {
     @Override
     public Solution newSolution() {
         Solution soln = new Solution(numberOfVariables, numberOfObjectives);
-        soln.setVariable(0, new RealVariable(smaBound.getLowerBound(), smaBound.getUpperBound()));
-        soln.setVariable(1, new RealVariable(incBound.getLowerBound(), incBound.getUpperBound()));
-        soln.setVariable(2, new WalkerVariable(tBound, pBound, fBound));
+        soln.setVariable(0, new WalkerVariable(smaBound, incBound, tBound, pBound, fBound));
         return soln;
     }
 
