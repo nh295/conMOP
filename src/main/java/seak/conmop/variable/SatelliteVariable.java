@@ -5,9 +5,15 @@
  */
 package seak.conmop.variable;
 
+import java.util.ArrayList;
+import java.util.Objects;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.time.AbsoluteDate;
 import seak.conmop.util.Bounds;
+import seak.orekit.object.Satellite;
 
 /**
  * Variable for the satellite
@@ -341,4 +347,50 @@ public class SatelliteVariable implements Variable {
     public Bounds<Double> getAnomBound() {
         return anomBound;
     }
+    
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 89 * hash + Objects.hashCode(this.sma);
+        hash = 89 * hash + Objects.hashCode(this.ecc);
+        hash = 89 * hash + Objects.hashCode(this.inc);
+        hash = 89 * hash + Objects.hashCode(this.argPer);
+        hash = 89 * hash + Objects.hashCode(this.raan);
+        hash = 89 * hash + Objects.hashCode(this.anom);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final SatelliteVariable other = (SatelliteVariable) obj;
+        if (!Objects.equals(this.sma, other.sma)) {
+            return false;
+        }
+        if (!Objects.equals(this.ecc, other.ecc)) {
+            return false;
+        }
+        if (!Objects.equals(this.inc, other.inc)) {
+            return false;
+        }
+        if (!Objects.equals(this.argPer, other.argPer)) {
+            return false;
+        }
+        if (!Objects.equals(this.raan, other.raan)) {
+            return false;
+        }
+        if (!Objects.equals(this.anom, other.anom)) {
+            return false;
+        }
+        return true;
+    }
+
 }

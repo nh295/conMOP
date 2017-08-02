@@ -7,11 +7,14 @@ package seak.conmop.variable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
 import org.orekit.utils.Constants;
 import seak.conmop.util.Bounds;
+import seak.orekit.object.Constellation;
+import seak.orekit.object.Satellite;
 
 /**
  *
@@ -59,7 +62,7 @@ public class ConstellationVariable implements Variable {
     /**
      * Satellite variables
      */
-    private final List<SatelliteVariable> satelliteVars;
+    private final Set<SatelliteVariable> satelliteVars;
 
     /**
      * Creates a new variable for a satellite. Assumes all valid values are
@@ -107,7 +110,7 @@ public class ConstellationVariable implements Variable {
         this.argPerBound = argPerBound;
         this.raanBound = raanBound;
         this.anomBound = anomBound;
-        this.satelliteVars = new ArrayList<>();
+        this.satelliteVars = new HashSet<>();
     }
 
     /**
@@ -131,7 +134,7 @@ public class ConstellationVariable implements Variable {
         this.anomBound = rep.getAnomBound();
         checkBounds(satelliteBound, smaBound, eccBound, incBound, argPerBound, raanBound, anomBound);
         this.satelliteBound = satelliteBound;
-        this.satelliteVars = new ArrayList<>();
+        this.satelliteVars = new HashSet<>();
 
         this.setSatelliteVariables(satellites);
     }
@@ -163,22 +166,22 @@ public class ConstellationVariable implements Variable {
                     String.format("Expected eccentriciy bounds to be in range [0,1]."
                             + " Found [%f,%f]", ecc.getLowerBound(), ecc.getUpperBound()));
         }
-        if (inc.getLowerBound() < 0. || inc.getUpperBound() > 2.*Math.PI) {
+        if (inc.getLowerBound() < 0. || inc.getUpperBound() > 2. * Math.PI) {
             throw new IllegalArgumentException(
                     String.format("Expected inclination bounds to be in range [0,2pi]."
                             + " Found [%f,%f]", inc.getLowerBound(), inc.getUpperBound()));
         }
-        if (argPer.getLowerBound() < 0. || argPer.getUpperBound() > 2.*Math.PI) {
+        if (argPer.getLowerBound() < 0. || argPer.getUpperBound() > 2. * Math.PI) {
             throw new IllegalArgumentException(
                     String.format("Expected argument of perigee bounds to be in range [0,2pi]."
                             + " Found [%f,%f]", argPer.getLowerBound(), argPer.getUpperBound()));
         }
-        if (raan.getLowerBound() < 0. || raan.getUpperBound() > 2.*Math.PI) {
+        if (raan.getLowerBound() < 0. || raan.getUpperBound() > 2. * Math.PI) {
             throw new IllegalArgumentException(
                     String.format("Expected right ascension of the ascending node bounds to be in range [0,2pi]."
                             + " Found [%f,%f]", raan.getLowerBound(), raan.getUpperBound()));
         }
-        if (anom.getLowerBound() < 0. || anom.getUpperBound() > 2.*Math.PI) {
+        if (anom.getLowerBound() < 0. || anom.getUpperBound() > 2. * Math.PI) {
             throw new IllegalArgumentException(
                     String.format("Expected true anomaly bounds to be in range [0,2pi]."
                             + " Found [%f,%f]", raan.getLowerBound(), raan.getUpperBound()));

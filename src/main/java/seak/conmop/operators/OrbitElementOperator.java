@@ -6,6 +6,9 @@
 package seak.conmop.operators;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import org.hipparchus.util.FastMath;
+import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variation;
 import org.moeaframework.core.variable.RealVariable;
@@ -39,7 +42,21 @@ public class OrbitElementOperator implements Variation {
 
         for (int i = 0; i < children[0].getNumberOfVariables(); i++) {
             //if the solution is composed of constellation variables
-            if (children[0].getVariable(i) instanceof ConstellationVariable) {
+            boolean constelVariables = true;
+            for (int j = 0; j < parents.length; j++) {
+                if (!(children[j].getVariable(i) instanceof ConstellationVariable)) {
+                    constelVariables = false;
+                    break;
+                }
+            }
+            boolean satVariables = true;
+            for (int j = 0; j < parents.length; j++) {
+                if (!(children[j].getVariable(i) instanceof SatelliteVariable)) {
+                    satVariables = false;
+                    break;
+                }
+            }
+            if (constelVariables) {
                 ConstellationVariable[] input = new ConstellationVariable[children.length];
                 for (int j = 0; j < children.length; j++) {
                     input[j] = (ConstellationVariable) children[j].getVariable(i);
@@ -48,7 +65,7 @@ public class OrbitElementOperator implements Variation {
                 for (int j = 0; j < children.length; j++) {
                     children[j].setVariable(i, output[j]);
                 }
-            } else if (children[0].getVariable(i) instanceof SatelliteVariable) {
+            } else if (satVariables) {
                 //if the solution is composed of satellite variables
                 SatelliteVariable[] input = new SatelliteVariable[children.length];
                 for (int j = 0; j < children.length; j++) {
@@ -64,42 +81,52 @@ public class OrbitElementOperator implements Variation {
     }
 
     /**
-     * Constellations must have the same number of satellites
+     * Constellations can have the same number of satellites. If they do not,
+     * then a number of satellites equal to the number of satellites in the
+     * smallest constellations will be grouped randomly with satellites from the
+     * other constellations and crossed using the given operation
      *
      * @param constellations constellations to recombine
      * @return recombined constellation variables
      */
     private ConstellationVariable[] evolve(ConstellationVariable[] constellations) {
-        //check that all constellations have the same number of satellites
-        int nsats = constellations[0].getSatelliteVariables().size();
-        for (int i = 1; i < constellations.length; i++) {
-            if (constellations[i].getSatelliteVariables().size() != nsats) {
-                throw new IllegalArgumentException(
-                        "Constellations must contain the same number of satellites for recombination");
-            }
+        //find the minimum number of satellites contained in any of the constellations
+        int minNSats = Integer.MAX_VALUE;
+        for (int i = 0; i < constellations.length; i++) {
+            minNSats = FastMath.min(minNSats, constellations[i].getSatelliteVariables().size());
         }
 
         //create a 2-D array of all parent satellite variables involved
-        SatelliteVariable[][] parentVars = new SatelliteVariable[nsats][constellations.length];
+        SatelliteVariable[][] parentVars = new SatelliteVariable[minNSats][constellations.length];
         for (int i = 0; i < constellations.length; i++) {
+            HashSet<Integer> parentsToCross = new HashSet<>();
+            while(parentsToCross.size() < minNSats){
+                parentsToCross.add(PRNG.nextInt(constellations[i].getSatelliteVariables().size()));
+            }
+            
             int j = 0;
+            int count = -1;
             for (SatelliteVariable var : constellations[i].getSatelliteVariables()) {
+                count++;
+                if(!parentsToCross.contains(count)){
+                    continue;
+                }
                 parentVars[j][i] = var;
                 j++;
             }
         }
 
         //create a 2-D array of all children satellite variables
-        SatelliteVariable[][] childrenVars = new SatelliteVariable[nsats][constellations.length];
-        for(int i = 0; i < constellations[0].getSatelliteVariables().size(); i++) {
+        SatelliteVariable[][] childrenVars = new SatelliteVariable[minNSats][constellations.length];
+        for (int i = 0; i < minNSats; i++) {
             childrenVars[i] = evolve(parentVars[i]);
         }
-        
+
         ConstellationVariable[] out = new ConstellationVariable[constellations.length];
         for (int i = 0; i < constellations.length; i++) {
-            out[i] = (ConstellationVariable)constellations[i].copy();
-            ArrayList<SatelliteVariable> satellites = new ArrayList<>(nsats);
-            for(int j=0; j<nsats; j++){
+            out[i] = (ConstellationVariable) constellations[i].copy();
+            ArrayList<SatelliteVariable> satellites = new ArrayList<>(minNSats);
+            for (int j = 0; j < minNSats; j++) {
                 satellites.add(childrenVars[j][i]);
             }
             out[i].setSatelliteVariables(satellites);
