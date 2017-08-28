@@ -5,15 +5,10 @@
  */
 package seak.conmop.variable;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
-import org.orekit.orbits.KeplerianOrbit;
-import org.orekit.orbits.PositionAngle;
-import org.orekit.time.AbsoluteDate;
 import seak.conmop.util.Bounds;
-import seak.orekit.object.Satellite;
 
 /**
  * Variable for the satellite

@@ -40,6 +40,7 @@ import org.moeaframework.core.comparator.ParetoDominanceComparator;
 import org.moeaframework.core.operator.CompoundVariation;
 import org.moeaframework.core.operator.RandomInitialization;
 import org.moeaframework.core.operator.TournamentSelection;
+import org.moeaframework.core.operator.binary.BitFlip;
 import org.moeaframework.core.operator.real.PM;
 import org.moeaframework.core.operator.real.SBX;
 import seak.orekit.propagation.PropagatorFactory;
@@ -48,7 +49,8 @@ import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
-import seak.conmop.operators.OrbitElementOperator;
+import seak.conmop.operators.StaticOrbitElementOperator;
+import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
 import seak.conmop.util.Bounds;
 import seak.orekit.STKGRID;
@@ -73,7 +75,7 @@ public class Search {
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(level);
         Logger.getGlobal().addHandler(handler);
-        
+
         //if running on a non-US machine, need the line below
         Locale.setDefault(new Locale("en", "US"));
 
@@ -81,15 +83,15 @@ public class Search {
 
         TimeScale utc = TimeScalesFactory.getUTC();
         AbsoluteDate startDate = new AbsoluteDate(2016, 1, 1, 00, 00, 00.000, utc);
-        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 11, 00, 00, 00.000, utc);
-        
+        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 8, 00, 00, 00.000, utc);
+
         //Enter satellite orbital parameters
         double a = 6978137.0;
 
         PropagatorFactory pf = new PropagatorFactory(PropagatorType.KEPLERIAN);
 
         Properties problemProperty = new Properties();
-        problemProperty.setProperty("numThreads", "6");
+        problemProperty.setProperty("numThreads", "10");
 
         Bounds<Integer> tBounds = new Bounds(3, 10);
         Bounds<Double> smaBounds = new Bounds(a + 400000, a + 800000);
@@ -98,8 +100,8 @@ public class Search {
 //        Problem problem = new WalkerOptimizer("", startDate, endDate, pf, 
 //                new HashSet(STKGRID.getPoints20()), tBounds, smaBounds, 
 //                incBounds, problemProperty);
-        Problem problem = new ConstellationOptimizer("", startDate, endDate, pf, 
-                new HashSet(STKGRID.getPoints20()), FastMath.toRadians(45), 
+        Problem problem = new ConstellationOptimizer("", startDate, endDate, pf,
+                new HashSet(STKGRID.getPoints20()), FastMath.toRadians(45),
                 tBounds, smaBounds, incBounds, problemProperty);
 
         //set up the search parameters
@@ -119,9 +121,12 @@ public class Search {
         //set up variations
         //example of operators you might use
         ArrayList<Variation> operators = new ArrayList();
-        operators.add(new OrbitElementOperator(
-                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20))));
-        operators.add(new VariableLengthOnePointCrossover(1.0, true));
+//        operators.add(new OrbitElementOperator(
+//                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20))));
+//        operators.add(new VariableLengthOnePointCrossover(1.0, true));
+        operators.add(new StaticOrbitElementOperator(
+                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20), new BitFlip(0.01))));
+        operators.add(new StaticLengthOnePointCrossover(1.0));
 
         //create operator selector
         IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.1);
@@ -146,7 +151,7 @@ public class Search {
                             + " Approximate time remaining %10f min.",
                             aos.getNumberOfEvaluations(), maxNFE, currentTime,
                             currentTime / emoea.getNumberOfEvaluations() * (maxNFE - aos.getNumberOfEvaluations())));
-            for(Solution solution : aos.getPopulation()){
+            for (Solution solution : aos.getPopulation()) {
                 allSolutions.add(solution);
             }
         }

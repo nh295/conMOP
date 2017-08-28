@@ -8,6 +8,7 @@ package seak.conmop.variable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
@@ -62,7 +63,7 @@ public class ConstellationVariable implements Variable {
     /**
      * Satellite variables
      */
-    private final Set<SatelliteVariable> satelliteVars;
+    private final List<SatelliteVariable> satelliteVars;
 
     /**
      * Creates a new variable for a satellite. Assumes all valid values are
@@ -110,7 +111,7 @@ public class ConstellationVariable implements Variable {
         this.argPerBound = argPerBound;
         this.raanBound = raanBound;
         this.anomBound = anomBound;
-        this.satelliteVars = new HashSet<>();
+        this.satelliteVars = new ArrayList<>();
     }
 
     /**
@@ -134,7 +135,7 @@ public class ConstellationVariable implements Variable {
         this.anomBound = rep.getAnomBound();
         checkBounds(satelliteBound, smaBound, eccBound, incBound, argPerBound, raanBound, anomBound);
         this.satelliteBound = satelliteBound;
-        this.satelliteVars = new HashSet<>();
+        this.satelliteVars = new ArrayList<>();
 
         this.setSatelliteVariables(satellites);
     }

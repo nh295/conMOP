@@ -29,6 +29,8 @@ import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
 import seak.conmop.util.Bounds;
+import seak.conmop.variable.BooleanSatelliteVariable;
+import seak.conmop.variable.ConstellationMatrix;
 import seak.conmop.variable.ConstellationVariable;
 import seak.conmop.variable.SatelliteVariable;
 import seak.orekit.analysis.Analysis;
@@ -203,6 +205,12 @@ public class ConstellationOptimizer extends AbstractProblem {
         
         ArrayList<Satellite> satelliteList = new ArrayList<>();
         for(SatelliteVariable var : constel.getSatelliteVariables()){
+            if(var instanceof BooleanSatelliteVariable){
+                if(!((BooleanSatelliteVariable)var).getManifest()){
+                    continue;
+                }
+            }
+            
             Orbit orb = new KeplerianOrbit(
                     var.getSma(), var.getEcc(), var.getInc(), 
                     var.getArgPer(), var.getRaan(), var.getTrueAnomaly(),
@@ -235,13 +243,14 @@ public class ConstellationOptimizer extends AbstractProblem {
         GroundEventAnalyzer gea = new GroundEventAnalyzer(fca.getEvents(cdef));
         DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false);
         solution.setObjective(0, gapStats.getMean());
-        solution.setObjective(1, constel.getSatelliteVariables().size());
+        solution.setObjective(1, satelliteList.size());
     }
 
     @Override
     public Solution newSolution() {
         Solution soln = new Solution(numberOfVariables, numberOfObjectives);
-        soln.setVariable(0, new ConstellationVariable(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
+//        soln.setVariable(0, new ConstellationVariable(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
+        soln.setVariable(0, new ConstellationMatrix(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
         return soln;
     }
 
