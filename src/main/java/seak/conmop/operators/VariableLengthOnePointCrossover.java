@@ -75,7 +75,7 @@ public class VariableLengthOnePointCrossover implements Variation {
                     ConstellationVariable[] newVars = evolve(constel1, constel2);
 
                     result1.setVariable(i, newVars[0]);
-                    result1.setVariable(i, newVars[1]);
+                    result2.setVariable(i, newVars[1]);
                 }
             }
         }

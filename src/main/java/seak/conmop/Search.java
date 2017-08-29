@@ -123,8 +123,8 @@ public class Search {
         //set up the search parameters
         int populationSize = 100;
         int maxNFE = 5000;
-        String mode = "static_";
-//        String mode = "variable_";
+//        String mode = "static_";
+        String mode = "variable_";
 
         for (int i = 0; i < 30; i++) {
 
@@ -143,24 +143,24 @@ public class Search {
             //set up variations
             //example of operators you might use
             ArrayList<Variation> operators = new ArrayList();
-//            operators.add(new CompoundVariation(
-//                    new OrbitElementOperator(
-//                            new CompoundVariation(new SBX(1, 20), new VariablePM(20))),
-//                    new RepairNumberOfSatellites()));
-//            operators.add(new CompoundVariation(
-//                    new VariableLengthOnePointCrossover(1.0, true),
-//                    new RepairNumberOfSatellites()));
             operators.add(new CompoundVariation(
-                    new StaticOrbitElementOperator(
-                            new CompoundVariation(new SBX(1, 20),
-                                    new BinaryUniformCrossover(0.5), new VariablePM(20),
-                                    new BitFlip(1./140.))),
-                    new RepairNumberOfSatellites()
-            ));
+                    new OrbitElementOperator(
+                            new CompoundVariation(new SBX(1, 20), new VariablePM(20))),
+                    new RepairNumberOfSatellites()));
             operators.add(new CompoundVariation(
-                    new StaticLengthOnePointCrossover(1.0), new StaticOrbitElementOperator(
-                            new CompoundVariation(new VariablePM(20), new BitFlip(1./140.))),
-                            new RepairNumberOfSatellites()));
+                    new VariableLengthOnePointCrossover(1.0, true),
+                    new RepairNumberOfSatellites()));
+//            operators.add(new CompoundVariation(
+//                    new StaticOrbitElementOperator(
+//                            new CompoundVariation(new SBX(1, 20),
+//                                    new BinaryUniformCrossover(0.5), new VariablePM(20),
+//                                    new BitFlip(1./140.))),
+//                    new RepairNumberOfSatellites()
+//            ));
+//            operators.add(new CompoundVariation(
+//                    new StaticLengthOnePointCrossover(1.0), new StaticOrbitElementOperator(
+//                            new CompoundVariation(new VariablePM(20), new BitFlip(1./140.))),
+//                            new RepairNumberOfSatellites()));
 
             //create operator selector
             IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.1);

@@ -6,12 +6,9 @@
 package seak.conmop.operators;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import org.hipparchus.util.FastMath;
-import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variation;
-import org.moeaframework.core.operator.UniformCrossover;
 import org.moeaframework.core.variable.BinaryVariable;
 import org.moeaframework.core.variable.RealVariable;
 import seak.conmop.variable.BooleanSatelliteVariable;
@@ -111,7 +108,9 @@ public class StaticOrbitElementOperator implements Variation {
                 parent.setVariable(varCount + 3, new RealVariable(sat.getArgPer(), sat.getArgPerBound().getLowerBound(), sat.getArgPerBound().getUpperBound()));
                 parent.setVariable(varCount + 4, new RealVariable(sat.getRaan(), sat.getRaanBound().getLowerBound(), sat.getRaanBound().getUpperBound()));
                 parent.setVariable(varCount + 5, new RealVariable(sat.getTrueAnomaly(), sat.getAnomBound().getLowerBound(), sat.getAnomBound().getUpperBound()));
-                parent.setVariable(varCount + 6, new BinaryVariable(1));
+                BinaryVariable manifest = new BinaryVariable(1);
+                manifest.set(0, ((BooleanSatelliteVariable)sat).getManifest());
+                parent.setVariable(varCount + 6, manifest);
                 varCount += 7;
             }
             parents[i] = parent;
