@@ -49,6 +49,8 @@ import org.orekit.errors.OrekitException;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
+import seak.conmop.operators.BinaryUniformCrossover;
+import seak.conmop.operators.RepairNumberOfSatellites;
 import seak.conmop.operators.StaticOrbitElementOperator;
 import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
@@ -105,68 +107,78 @@ public class Search {
                 tBounds, smaBounds, incBounds, problemProperty);
 
         //set up the search parameters
-        long startTime = System.nanoTime();
         int populationSize = 100;
-        Initialization initialization = new RandomInitialization(problem,
-                populationSize);
+        int maxNFE = 5000;
 
-        Population population = new Population();
-        DominanceComparator comparator = new ParetoDominanceComparator();
-        EpsilonBoxDominanceArchive archive = new EpsilonBoxDominanceArchive(new double[]{1, 0.1});
-        final TournamentSelection selection = new TournamentSelection(2, comparator);
-        AOSVariation variation = new AOSVariation();
-        EpsilonMOEA emoea = new EpsilonMOEA(problem, population, archive,
-                selection, variation, initialization, comparator);
+        for (int i = 0; i < 10; i++) {
 
-        //set up variations
-        //example of operators you might use
-        ArrayList<Variation> operators = new ArrayList();
+            long startTime = System.nanoTime();
+            Initialization initialization = new RandomInitialization(problem,
+                    populationSize);
+
+            Population population = new Population();
+            DominanceComparator comparator = new ParetoDominanceComparator();
+            EpsilonBoxDominanceArchive archive = new EpsilonBoxDominanceArchive(new double[]{1, 0.1});
+            final TournamentSelection selection = new TournamentSelection(2, comparator);
+            AOSVariation variation = new AOSVariation();
+            EpsilonMOEA emoea = new EpsilonMOEA(problem, population, archive,
+                    selection, variation, initialization, comparator);
+
+            //set up variations
+            //example of operators you might use
+            ArrayList<Variation> operators = new ArrayList();
 //        operators.add(new OrbitElementOperator(
 //                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20))));
 //        operators.add(new VariableLengthOnePointCrossover(1.0, true));
-        operators.add(new StaticOrbitElementOperator(
-                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20), new BitFlip(0.01))));
-        operators.add(new StaticLengthOnePointCrossover(1.0));
+            operators.add(new CompoundVariation(
+                    new StaticOrbitElementOperator(
+                            new CompoundVariation(new SBX(1, 20),
+                                    new BinaryUniformCrossover(0.5), new PM(0.01, 20),
+                                    new BitFlip(0.01))),
+                    new RepairNumberOfSatellites()));
+            operators.add(new CompoundVariation(
+                    new StaticLengthOnePointCrossover(1.0),
+                    new RepairNumberOfSatellites()));
 
-        //create operator selector
-        IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.1);
+            //create operator selector
+            IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.1);
 
-        //create credit assignment
-        ICreditAssignment creditAssignment = new ArchiveContribution(1, 0);
+            //create credit assignment
+            ICreditAssignment creditAssignment = new ArchiveContribution(1, 0);
 
-        //create AOS
-        AOSStrategy aosStrategy = new AOSStrategy(creditAssignment, operatorSelector);
-        AOSMOEA aos = new AOSMOEA(emoea, variation, aosStrategy);
+            //create AOS
+            AOSStrategy aosStrategy = new AOSStrategy(creditAssignment, operatorSelector);
+            AOSMOEA aos = new AOSMOEA(emoea, variation, aosStrategy);
 
-        HashSet<Solution> allSolutions = new HashSet<>();
+            HashSet<Solution> allSolutions = new HashSet<>();
 
-        int maxNFE = 5000;
-
-        System.out.println(String.format("Initializing population... Size = %d", populationSize));
-        while (aos.getNumberOfEvaluations() < maxNFE) {
-            aos.step();
-            double currentTime = ((System.nanoTime() - startTime) / Math.pow(10, 9)) / 60.;
-            System.out.println(
-                    String.format("%d NFE out of %d NFE: Time elapsed = %10f min."
-                            + " Approximate time remaining %10f min.",
-                            aos.getNumberOfEvaluations(), maxNFE, currentTime,
-                            currentTime / emoea.getNumberOfEvaluations() * (maxNFE - aos.getNumberOfEvaluations())));
-            for (Solution solution : aos.getPopulation()) {
-                allSolutions.add(solution);
+            System.out.println(String.format("Initializing population... Size = %d", populationSize));
+            while (aos.getNumberOfEvaluations() < maxNFE) {
+                aos.step();
+                double currentTime = ((System.nanoTime() - startTime) / Math.pow(10, 9)) / 60.;
+                System.out.println(
+                        String.format("%d NFE out of %d NFE: Time elapsed = %10f min."
+                                + " Approximate time remaining %10f min.",
+                                aos.getNumberOfEvaluations(), maxNFE, currentTime,
+                                currentTime / emoea.getNumberOfEvaluations() * (maxNFE - aos.getNumberOfEvaluations())));
+                for (Solution solution : aos.getPopulation()) {
+                    allSolutions.add(solution);
+                }
             }
-        }
-        System.out.println(aos.getArchive().size());
+            System.out.println(aos.getArchive().size());
 
-        long endTime = System.nanoTime();
-        Logger.getGlobal().finest(String.format("Took %.4f sec", (endTime - startTime) / Math.pow(10, 9)));
+            long endTime = System.nanoTime();
+            Logger.getGlobal().finest(String.format("Took %.4f sec", (endTime - startTime) / Math.pow(10, 9)));
 
-        try {
-            PopulationIO.writeObjectives(new File("obj"), allSolutions);
-        } catch (IOException ex) {
-            Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+            try {
+                PopulationIO.write(new File("static_" + i+ ".pop"), allSolutions);
+                PopulationIO.writeObjectives(new File("static_" + i + ".obj"), allSolutions);
+            } catch (IOException ex) {
+                Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            IOCreditHistory.saveHistory(aos.getCreditHistory(),  "credit_" + i + ".credit", ",");
+            IOSelectionHistory.saveHistory(aos.getSelectionHistory(), "select_" + i + ".select", ",");
         }
-        IOCreditHistory.saveHistory(aos.getCreditHistory(), "credit", ",");
-        IOSelectionHistory.saveHistory(aos.getSelectionHistory(), "select", ",");
     }
 
 }

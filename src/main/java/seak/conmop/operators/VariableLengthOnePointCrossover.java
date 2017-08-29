@@ -87,7 +87,7 @@ public class VariableLengthOnePointCrossover implements Variation {
         //identify the constellation with fewer satellites
         ConstellationVariable constel1;
         ConstellationVariable constel2;
-        if (var1.getSatelliteVariables().size() <= var2.getSatelliteVariables().size()) {
+        if (var1.getNumberOfSatellites() <= var2.getNumberOfSatellites()) {
             constel1 = var1;
             constel2 = var2;
         } else {
@@ -95,16 +95,16 @@ public class VariableLengthOnePointCrossover implements Variation {
             constel2 = var1;
         }
 
-        if (constel1.getSatelliteVariables().size() > 1
-                && constel2.getSatelliteVariables().size() > 1) {
+        if (constel1.getNumberOfSatellites() > 1
+                && constel2.getNumberOfSatellites() > 1) {
             //select crossover points
             int crossoverPoint1 = PRNG.nextInt(
-                    constel1.getSatelliteVariables().size() - 1);
+                    constel1.getNumberOfSatellites() - 1);
 
             int crossoverPoint2;
             if (doubleCrossPoint) {
                 crossoverPoint2 = PRNG.nextInt(
-                        constel2.getSatelliteVariables().size() - 1);
+                        constel2.getNumberOfSatellites() - 1);
             } else {
                 crossoverPoint2 = crossoverPoint1;
             }

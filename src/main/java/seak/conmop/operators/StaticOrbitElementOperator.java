@@ -102,18 +102,8 @@ public class StaticOrbitElementOperator implements Variation {
         //create a 2-D array of all parent satellite variables involved
         SatelliteVariable[][] parentVars = new SatelliteVariable[minNSats][constellations.length];
         for (int i = 0; i < constellations.length; i++) {
-            HashSet<Integer> parentsToCross = new HashSet<>();
-            while(parentsToCross.size() < minNSats){
-                parentsToCross.add(PRNG.nextInt(constellations[i].getSatelliteVariables().size()));
-            }
-            
             int j = 0;
-            int count = -1;
             for (SatelliteVariable var : constellations[i].getSatelliteVariables()) {
-                count++;
-                if(!parentsToCross.contains(count)){
-                    continue;
-                }
                 parentVars[j][i] = var;
                 j++;
             }
@@ -158,7 +148,6 @@ public class StaticOrbitElementOperator implements Variation {
             parents[i] = parent;
         }
 
-        parents = new UniformCrossover(1).evolve(parents);
         Solution[] offspring = operator.evolve(parents);
 
         SatelliteVariable[] out = new SatelliteVariable[satellites.length];

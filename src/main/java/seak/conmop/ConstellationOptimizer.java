@@ -33,7 +33,6 @@ import seak.conmop.variable.BooleanSatelliteVariable;
 import seak.conmop.variable.ConstellationMatrix;
 import seak.conmop.variable.ConstellationVariable;
 import seak.conmop.variable.SatelliteVariable;
-import seak.orekit.analysis.Analysis;
 import seak.orekit.coverage.analysis.AnalysisMetric;
 import seak.orekit.coverage.analysis.FastCoverageAnalysis;
 import seak.orekit.coverage.analysis.GroundEventAnalyzer;
@@ -134,6 +133,13 @@ public class ConstellationOptimizer extends AbstractProblem {
      * The standard gravitational constant for Earth
      */
     private final double earthMu;
+    
+    /**
+     * a dummy constructor for analyzing hypervolumes after the optimization 
+     */
+    public ConstellationOptimizer() {
+        this(null, null, null, null, null, 0.0, null, null, null, null);
+    }
 
     /**
      * Constructor for that allows all feasible values for right ascension of

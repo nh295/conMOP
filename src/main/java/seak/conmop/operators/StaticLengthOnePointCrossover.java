@@ -75,7 +75,7 @@ public class StaticLengthOnePointCrossover implements Variation {
 
     private ConstellationVariable[] evolve(ConstellationVariable constel1, ConstellationVariable constel2) {
         //check to see if both constellations have the same number of satellites
-        if (constel1.getSatelliteVariables().size() != constel2.getSatelliteVariables().size()) {
+        if (constel1.getSatelliteVariables().size()!= constel2.getSatelliteVariables().size()) {
             throw new IllegalArgumentException(
                     "Expected both constellations to have the same number of satellites.");
         }

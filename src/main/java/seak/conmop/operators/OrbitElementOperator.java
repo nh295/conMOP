@@ -93,7 +93,7 @@ public class OrbitElementOperator implements Variation {
         //find the minimum number of satellites contained in any of the constellations
         int minNSats = Integer.MAX_VALUE;
         for (int i = 0; i < constellations.length; i++) {
-            minNSats = FastMath.min(minNSats, constellations[i].getSatelliteVariables().size());
+            minNSats = FastMath.min(minNSats, constellations[i].getNumberOfSatellites());
         }
 
         //create a 2-D array of all parent satellite variables involved
@@ -101,7 +101,7 @@ public class OrbitElementOperator implements Variation {
         for (int i = 0; i < constellations.length; i++) {
             HashSet<Integer> parentsToCross = new HashSet<>();
             while(parentsToCross.size() < minNSats){
-                parentsToCross.add(PRNG.nextInt(constellations[i].getSatelliteVariables().size()));
+                parentsToCross.add(PRNG.nextInt(constellations[i].getNumberOfSatellites()));
             }
             
             int j = 0;

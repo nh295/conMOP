@@ -7,15 +7,11 @@ package seak.conmop.variable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
 import org.orekit.utils.Constants;
 import seak.conmop.util.Bounds;
-import seak.orekit.object.Constellation;
-import seak.orekit.object.Satellite;
 
 /**
  *
@@ -213,6 +209,14 @@ public class ConstellationVariable implements Variable {
             var.randomize();
             satelliteVars.add(var);
         }
+    }
+    
+    /**
+     * Gets the number of satellites that make up this constellation
+     * @return 
+     */
+    public int getNumberOfSatellites(){
+        return satelliteVars.size();
     }
 
     /**
