@@ -170,7 +170,7 @@ public class ConstellationOptimizer extends AbstractProblem {
             PropagatorFactory propagatorFactory, Set<GeodeticPoint> poi, double halfAngle, Bounds<Integer> nSatBound, 
             Bounds<Double> sma, Bounds<Double> ecc, Bounds<Double> inc,
             Bounds<Double> raan, Bounds<Double> ap, Bounds<Double> ta, Properties properties) {
-        super(1, 2);
+        super(1, 3);
 
         try {
             OrekitConfig.init();
@@ -250,6 +250,13 @@ public class ConstellationOptimizer extends AbstractProblem {
         DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false);
         solution.setObjective(0, gapStats.getMean());
         solution.setObjective(1, satelliteList.size());
+        
+        //compute average semi-major axis
+        DescriptiveStatistics stats = new DescriptiveStatistics();
+        for(Satellite sat : satelliteList){
+            stats.addValue(sat.getOrbit().getA());
+        }
+        solution.setObjective(2, stats.getMean());
     }
 
     @Override

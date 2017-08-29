@@ -10,19 +10,17 @@ import aos.IO.IOSelectionHistory;
 import aos.aos.AOSMOEA;
 import aos.aos.AOSStrategy;
 import aos.creditassigment.ICreditAssignment;
-import aos.creditassignment.offspringparent.ParentDomination;
 import aos.creditassignment.setcontribution.ArchiveContribution;
 import aos.nextoperator.IOperatorSelector;
 import aos.operator.AOSVariation;
 import aos.operatorselectors.AdaptivePursuit;
-import aos.operatorselectors.ProbabilityMatching;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,19 +41,30 @@ import org.moeaframework.core.operator.TournamentSelection;
 import org.moeaframework.core.operator.binary.BitFlip;
 import org.moeaframework.core.operator.real.PM;
 import org.moeaframework.core.operator.real.SBX;
+import org.orekit.bodies.BodyShape;
+import org.orekit.bodies.GeodeticPoint;
+import org.orekit.bodies.OneAxisEllipsoid;
 import seak.orekit.propagation.PropagatorFactory;
 import seak.orekit.propagation.PropagatorType;
 import org.orekit.errors.OrekitException;
+import org.orekit.frames.Frame;
+import org.orekit.frames.FramesFactory;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
+import org.orekit.utils.Constants;
+import org.orekit.utils.IERSConventions;
 import seak.conmop.operators.BinaryUniformCrossover;
+import seak.conmop.operators.OrbitElementOperator;
 import seak.conmop.operators.RepairNumberOfSatellites;
 import seak.conmop.operators.StaticOrbitElementOperator;
 import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
+import seak.conmop.operators.VariablePM;
 import seak.conmop.util.Bounds;
 import seak.orekit.STKGRID;
+import seak.orekit.object.CoverageDefinition;
+import seak.orekit.object.CoveragePoint;
 import seak.orekit.util.OrekitConfig;
 
 /**
@@ -95,22 +104,29 @@ public class Search {
         Properties problemProperty = new Properties();
         problemProperty.setProperty("numThreads", "10");
 
-        Bounds<Integer> tBounds = new Bounds(3, 10);
-        Bounds<Double> smaBounds = new Bounds(a + 400000, a + 800000);
+        Bounds<Integer> tBounds = new Bounds(1, 20);
+        Bounds<Double> smaBounds = new Bounds(a + 400000, a + 1000000);
         Bounds<Double> incBounds = new Bounds(30. * DEG_TO_RAD, 100. * DEG_TO_RAD);
 
-//        Problem problem = new WalkerOptimizer("", startDate, endDate, pf, 
-//                new HashSet(STKGRID.getPoints20()), tBounds, smaBounds, 
-//                incBounds, problemProperty);
+        Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2003, true);
+        BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
+                Constants.WGS84_EARTH_FLATTENING, earthFrame);
+        CoverageDefinition cdef = new CoverageDefinition("cdef", 20.0, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
+        Set<GeodeticPoint> points = new HashSet<>();
+        for (CoveragePoint pt : cdef.getPoints()) {
+            points.add(pt.getPoint());
+        }
         Problem problem = new ConstellationOptimizer("", startDate, endDate, pf,
-                new HashSet(STKGRID.getPoints20()), FastMath.toRadians(45),
+                points, FastMath.toRadians(45),
                 tBounds, smaBounds, incBounds, problemProperty);
 
         //set up the search parameters
         int populationSize = 100;
         int maxNFE = 5000;
+        String mode = "static_";
+//        String mode = "variable_";
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 30; i++) {
 
             long startTime = System.nanoTime();
             Initialization initialization = new RandomInitialization(problem,
@@ -127,18 +143,24 @@ public class Search {
             //set up variations
             //example of operators you might use
             ArrayList<Variation> operators = new ArrayList();
-//        operators.add(new OrbitElementOperator(
-//                new CompoundVariation(new SBX(1, 20), new PM(0.01, 20))));
-//        operators.add(new VariableLengthOnePointCrossover(1.0, true));
+//            operators.add(new CompoundVariation(
+//                    new OrbitElementOperator(
+//                            new CompoundVariation(new SBX(1, 20), new VariablePM(20))),
+//                    new RepairNumberOfSatellites()));
+//            operators.add(new CompoundVariation(
+//                    new VariableLengthOnePointCrossover(1.0, true),
+//                    new RepairNumberOfSatellites()));
             operators.add(new CompoundVariation(
                     new StaticOrbitElementOperator(
                             new CompoundVariation(new SBX(1, 20),
-                                    new BinaryUniformCrossover(0.5), new PM(0.01, 20),
-                                    new BitFlip(0.01))),
-                    new RepairNumberOfSatellites()));
+                                    new BinaryUniformCrossover(0.5), new VariablePM(20),
+                                    new BitFlip(1./140.))),
+                    new RepairNumberOfSatellites()
+            ));
             operators.add(new CompoundVariation(
-                    new StaticLengthOnePointCrossover(1.0),
-                    new RepairNumberOfSatellites()));
+                    new StaticLengthOnePointCrossover(1.0), new StaticOrbitElementOperator(
+                            new CompoundVariation(new VariablePM(20), new BitFlip(1./140.))),
+                            new RepairNumberOfSatellites()));
 
             //create operator selector
             IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.1);
@@ -171,13 +193,13 @@ public class Search {
             Logger.getGlobal().finest(String.format("Took %.4f sec", (endTime - startTime) / Math.pow(10, 9)));
 
             try {
-                PopulationIO.write(new File("static_" + i+ ".pop"), allSolutions);
-                PopulationIO.writeObjectives(new File("static_" + i + ".obj"), allSolutions);
+                PopulationIO.write(new File(mode + i + ".pop"), allSolutions);
+                PopulationIO.writeObjectives(new File(mode + i + ".obj"), allSolutions);
             } catch (IOException ex) {
                 Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
             }
-            IOCreditHistory.saveHistory(aos.getCreditHistory(),  "credit_" + i + ".credit", ",");
-            IOSelectionHistory.saveHistory(aos.getSelectionHistory(), "select_" + i + ".select", ",");
+            IOCreditHistory.saveHistory(aos.getCreditHistory(), mode + i + ".credit", ",");
+            IOSelectionHistory.saveHistory(aos.getSelectionHistory(), mode + i + ".select", ",");
         }
     }
 

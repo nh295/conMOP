@@ -6,6 +6,7 @@
 package seak.conmop.operators;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import org.hipparchus.util.FastMath;
 import org.moeaframework.core.PRNG;
@@ -97,39 +98,60 @@ public class OrbitElementOperator implements Variation {
         }
 
         //create a 2-D array of all parent satellite variables involved
-        SatelliteVariable[][] parentVars = new SatelliteVariable[minNSats][constellations.length];
+        SatelliteVariable[][] satsToCross = new SatelliteVariable[constellations.length][minNSats];
+        int[][] satsToCrossIndex = new int[constellations.length][minNSats];
         for (int i = 0; i < constellations.length; i++) {
-            HashSet<Integer> parentsToCross = new HashSet<>();
-            while(parentsToCross.size() < minNSats){
-                parentsToCross.add(PRNG.nextInt(constellations[i].getNumberOfSatellites()));
+            ArrayList<SatelliteVariable> candidates = new ArrayList(constellations[i].getSatelliteVariables());
+            ArrayList<Integer> candidatesIndices = new ArrayList<>();
+            for(int j=0; j<candidates.size(); j++){
+                candidatesIndices.add(j);
             }
-            
-            int j = 0;
-            int count = -1;
-            for (SatelliteVariable var : constellations[i].getSatelliteVariables()) {
-                count++;
-                if(!parentsToCross.contains(count)){
-                    continue;
-                }
-                parentVars[j][i] = var;
-                j++;
+            Collections.shuffle(candidates);
+            for(int j=0; j<minNSats; j++){
+                int index = candidatesIndices.get(j);
+                satsToCross[i][j] = candidates.get(index);
+                satsToCrossIndex[i][j] = index;
             }
+        }
+        
+        //create the vector representation of the constellation
+        Solution[] parents = new Solution[constellations.length];
+        for (int i = 0; i < constellations.length; i++) {
+            Solution parent = new Solution(6 * minNSats, 0);
+            int varCount = 0;
+            for(int j = 0; j< minNSats ; j++){
+                SatelliteVariable sat = satsToCross[i][j];
+                parent.setVariable(varCount + 0, new RealVariable(sat.getSma(), sat.getSmaBound().getLowerBound(), sat.getSmaBound().getUpperBound()));
+                parent.setVariable(varCount + 1, new RealVariable(sat.getEcc(), sat.getEccBound().getLowerBound(), sat.getEccBound().getUpperBound()));
+                parent.setVariable(varCount + 2, new RealVariable(sat.getInc(), sat.getIncBound().getLowerBound(), sat.getIncBound().getUpperBound()));
+                parent.setVariable(varCount + 3, new RealVariable(sat.getArgPer(), sat.getArgPerBound().getLowerBound(), sat.getArgPerBound().getUpperBound()));
+                parent.setVariable(varCount + 4, new RealVariable(sat.getRaan(), sat.getRaanBound().getLowerBound(), sat.getRaanBound().getUpperBound()));
+                parent.setVariable(varCount + 5, new RealVariable(sat.getTrueAnomaly(), sat.getAnomBound().getLowerBound(), sat.getAnomBound().getUpperBound()));
+                varCount += 6;
+            }
+            parents[i] = parent;
         }
 
-        //create a 2-D array of all children satellite variables
-        SatelliteVariable[][] childrenVars = new SatelliteVariable[minNSats][constellations.length];
-        for (int i = 0; i < minNSats; i++) {
-            childrenVars[i] = evolve(parentVars[i]);
-        }
+        Solution[] children = operator.evolve(parents);
 
         ConstellationVariable[] out = new ConstellationVariable[constellations.length];
-        for (int i = 0; i < constellations.length; i++) {
+        for (int i = 0; i < children.length; i++) {
+            ArrayList<SatelliteVariable> satList = new ArrayList<>(constellations[i].getSatelliteVariables());
+            int satCount = 0;
+            Solution child = children[i];
             out[i] = (ConstellationVariable) constellations[i].copy();
-            ArrayList<SatelliteVariable> satellites = new ArrayList<>(minNSats);
-            for (int j = 0; j < minNSats; j++) {
-                satellites.add(childrenVars[j][i]);
+            for (int j = 0; j< minNSats; j++) {
+                SatelliteVariable satVar = (SatelliteVariable) satsToCross[i][j].copy();
+                satVar.setSma(((RealVariable) child.getVariable(satCount + 0)).getValue());
+                satVar.setEcc(((RealVariable) child.getVariable(satCount + 1)).getValue());
+                satVar.setInc(((RealVariable) child.getVariable(satCount + 2)).getValue());
+                satVar.setArgPer(((RealVariable) child.getVariable(satCount + 3)).getValue());
+                satVar.setRaan(((RealVariable) child.getVariable(satCount + 4)).getValue());
+                satVar.setTrueAnomaly(((RealVariable) child.getVariable(satCount + 5)).getValue());
+                satList.set(satsToCrossIndex[i][j],satVar);
+                satCount += 6;
             }
-            out[i].setSatelliteVariables(satellites);
+            out[i].setSatelliteVariables(satList);
         }
         return out;
     }

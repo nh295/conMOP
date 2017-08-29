@@ -99,30 +99,45 @@ public class StaticOrbitElementOperator implements Variation {
             minNSats = FastMath.min(minNSats, constellations[i].getSatelliteVariables().size());
         }
 
-        //create a 2-D array of all parent satellite variables involved
-        SatelliteVariable[][] parentVars = new SatelliteVariable[minNSats][constellations.length];
+        //create the vector representation of the constellation
+        Solution[] parents = new Solution[constellations.length];
         for (int i = 0; i < constellations.length; i++) {
-            int j = 0;
-            for (SatelliteVariable var : constellations[i].getSatelliteVariables()) {
-                parentVars[j][i] = var;
-                j++;
+            Solution parent = new Solution(7 * constellations[i].getSatelliteVariables().size(), 0);
+            int varCount = 0;
+            for (SatelliteVariable sat : constellations[i].getSatelliteVariables()) {
+                parent.setVariable(varCount + 0, new RealVariable(sat.getSma(), sat.getSmaBound().getLowerBound(), sat.getSmaBound().getUpperBound()));
+                parent.setVariable(varCount + 1, new RealVariable(sat.getEcc(), sat.getEccBound().getLowerBound(), sat.getEccBound().getUpperBound()));
+                parent.setVariable(varCount + 2, new RealVariable(sat.getInc(), sat.getIncBound().getLowerBound(), sat.getIncBound().getUpperBound()));
+                parent.setVariable(varCount + 3, new RealVariable(sat.getArgPer(), sat.getArgPerBound().getLowerBound(), sat.getArgPerBound().getUpperBound()));
+                parent.setVariable(varCount + 4, new RealVariable(sat.getRaan(), sat.getRaanBound().getLowerBound(), sat.getRaanBound().getUpperBound()));
+                parent.setVariable(varCount + 5, new RealVariable(sat.getTrueAnomaly(), sat.getAnomBound().getLowerBound(), sat.getAnomBound().getUpperBound()));
+                parent.setVariable(varCount + 6, new BinaryVariable(1));
+                varCount += 7;
             }
+            parents[i] = parent;
         }
 
-        //create a 2-D array of all children satellite variables
-        SatelliteVariable[][] childrenVars = new SatelliteVariable[minNSats][constellations.length];
-        for (int i = 0; i < minNSats; i++) {
-            childrenVars[i] = evolve(parentVars[i]);
-        }
+        Solution[] children = operator.evolve(parents);
 
         ConstellationVariable[] out = new ConstellationVariable[constellations.length];
-        for (int i = 0; i < constellations.length; i++) {
+        for (int i = 0; i < children.length; i++) {
+            ArrayList<SatelliteVariable> satList = new ArrayList<>();
+            int satCount = 0;
+            Solution child = children[i];
             out[i] = (ConstellationVariable) constellations[i].copy();
-            ArrayList<SatelliteVariable> satellites = new ArrayList<>(minNSats);
-            for (int j = 0; j < minNSats; j++) {
-                satellites.add(childrenVars[j][i]);
+            for (SatelliteVariable sat : constellations[i].getSatelliteVariables()) {
+                BooleanSatelliteVariable satVar = (BooleanSatelliteVariable) sat.copy();
+                satVar.setSma(((RealVariable) child.getVariable(satCount + 0)).getValue());
+                satVar.setEcc(((RealVariable) child.getVariable(satCount + 1)).getValue());
+                satVar.setInc(((RealVariable) child.getVariable(satCount + 2)).getValue());
+                satVar.setArgPer(((RealVariable) child.getVariable(satCount + 3)).getValue());
+                satVar.setRaan(((RealVariable) child.getVariable(satCount + 4)).getValue());
+                satVar.setTrueAnomaly(((RealVariable) child.getVariable(satCount + 5)).getValue());
+                satVar.setManifest(((BinaryVariable) child.getVariable(satCount + 6)).get(0));
+                satCount += 7;
+                satList.add(satVar);
             }
-            out[i].setSatelliteVariables(satellites);
+            out[i].setSatelliteVariables(satList);
         }
         return out;
     }

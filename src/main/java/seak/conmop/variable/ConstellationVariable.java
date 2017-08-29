@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.moeaframework.core.PRNG;
+import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variable;
 import org.orekit.utils.Constants;
 import seak.conmop.util.Bounds;
@@ -210,12 +211,13 @@ public class ConstellationVariable implements Variable {
             satelliteVars.add(var);
         }
     }
-    
+
     /**
      * Gets the number of satellites that make up this constellation
-     * @return 
+     *
+     * @return
      */
-    public int getNumberOfSatellites(){
+    public int getNumberOfSatellites() {
         return satelliteVars.size();
     }
 
@@ -320,4 +322,4 @@ public class ConstellationVariable implements Variable {
         return anomBound;
     }
 
-}
+    }
