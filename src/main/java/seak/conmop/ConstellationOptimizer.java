@@ -262,8 +262,8 @@ public class ConstellationOptimizer extends AbstractProblem {
     @Override
     public Solution newSolution() {
         Solution soln = new Solution(numberOfVariables, numberOfObjectives);
-//        soln.setVariable(0, new ConstellationVariable(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
-        soln.setVariable(0, new ConstellationMatrix(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
+        soln.setVariable(0, new ConstellationVariable(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
+//        soln.setVariable(0, new ConstellationMatrix(nSatBound, smaBound, eccBound, incBound, apBound, raanBound, taBound));
         return soln;
     }
 
