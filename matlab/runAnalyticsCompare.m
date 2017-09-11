@@ -5,7 +5,7 @@ path = '/Users/nozomihitomi/Dropbox/conMOP/results/metrics/';
 load(strcat(path,'static.mat'));
 
 nexperiments = 2;
-ntrials = 5;
+ntrials = 30;
 hv = zeros(nexperiments,size(HV,1),ntrials);
 igd = zeros(nexperiments,size(IGD,1),ntrials);
 hv(1,:,:) = HV(:,1:ntrials);
@@ -91,7 +91,7 @@ legend(handles, 'Static', 'Variable','Location','SouthEast')
 set(gca,'FontSize',16);
 
 %find convergence differences
-thresholdHV = 0.80;
+thresholdHV = 0.95;
 attainment = zeros(nexperiments,ntrials);
 for i=1:nexperiments
     for j=1:ntrials

@@ -18,7 +18,7 @@ try
     
     iter = mergedPopulation.iterator;
     popSize = mergedPopulation.size;
-    objectives = zeros(popSize,2);
+    objectives = zeros(popSize,3);
     nfe = zeros(popSize,1);
     
     i = 1;
@@ -41,13 +41,13 @@ try
     
 catch me
     fprintf(me.message)
-    clear solution iter mergedPopulation h origin ans filepath files jarpath
+    clear solution iter mergedPopulation h origin ans filepath files
     cd(origin)
     conMOP_end(jarpath);
     disp(me.message);
 end
 cd(origin)
-clear solution iter mergedPopulation h origin ans filepath files jarpath
+clear solution iter mergedPopulation h origin ans filepath files
 conMOP_end(jarpath);
 
 save data.mat

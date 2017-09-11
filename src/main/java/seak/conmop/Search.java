@@ -97,7 +97,7 @@ public class Search {
         AbsoluteDate endDate = new AbsoluteDate(2016, 1, 8, 00, 00, 00.000, utc);
 
         //Enter satellite orbital parameters
-        double a = 6978137.0;
+        double a = Constants.WGS84_EARTH_EQUATORIAL_RADIUS;
 
         PropagatorFactory pf = new PropagatorFactory(PropagatorType.KEPLERIAN);
 

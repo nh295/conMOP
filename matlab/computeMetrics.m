@@ -7,7 +7,7 @@ function [NFE, HV, IGD] = computeMetrics(root,filepath)
 refPopPath = strcat(root, filesep, 'results', filesep, 'refpop', filesep, 'refPop.pop');
 maxNFE = 5000;
 step = 5;
-epsilonDouble = [10,1];
+epsilonDouble = [10, 1, 1000];
 h = waitbar(0, 'Processing populations...');
 try
     conMOP_init(root);
@@ -20,9 +20,11 @@ try
     refPop = org.moeaframework.core.PopulationIO.read(java.io.File(refPopPath));
     refPop = org.moeaframework.core.NondominatedPopulation(refPop);
     
+    refObj = dlmread(strcat(root, filesep, 'results', filesep, 'refpop', filesep, 'refPop.obj'));
+    
     %initialize problem
     prob = seak.conmop.ConstellationOptimizer();
-    refPoint = [13000.0,11.0];
+    refPoint = max(refObj)*1.1;
     fhv = org.moeaframework.core.indicator.Hypervolume(prob, refPop, refPoint);
     igd = org.moeaframework.core.indicator.InvertedGenerationalDistance(prob, refPop);
     

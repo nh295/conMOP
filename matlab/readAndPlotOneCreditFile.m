@@ -5,8 +5,8 @@ function [ops, credits] = readAndPlotOneCreditFile()
 %operator
 
 
-path = '/Users/nozomihitomi/Dropbox/EOSS/problems/climateCentric/result/AIAA JAIS/';
-respath = strcat(path,'random');
+path = '/Users/nozomihitomi/Dropbox/conMOP/results/';
+respath = strcat(path,'static');
 origin = cd(respath);
 
 files = dir('*.credit');
@@ -60,9 +60,6 @@ all_epoch_select = zeros(expData.keySet.size, nepochs, length(files)); %keeps tr
 
 for i=1:length(files)
     for k = 1:numOps
-        if(strcmp(op,'OnePointCrossover+BitFlip'))
-            continue;
-        end
         hist = allcredits{i}.get(ops{k});
         if size(hist,1)==0
             %means that the opeator was never selected
@@ -87,7 +84,6 @@ for i=1:length(files)
         end
     end
 end
-
 
 colors = {
       [0         0.4470    0.7410]
@@ -130,12 +126,20 @@ handles = [];
 means = mean(all_epoch_select,3);
 mean_sum = sum(means,1);
 
-for i=1:numOps
+for i=numOps:-1:1
+    X = [1:nepochs,fliplr(1:nepochs)];
+    stddev = std(squeeze(all_epoch_select(i,:,:)),0,2)./mean_sum';
+    stddev(isnan(stddev)) = 0;
     mean_sel = means(i,:)./mean_sum;
+    mean_sel(isnan(mean_sel)) = 0;
+    Y = [mean_sel'-stddev;flipud(mean_sel'+stddev)];
+    Y(Y<0) = 0; %correct for negative values
+    fill(X,Y,colors{i},'EdgeColor','none');
+    alpha(0.15)
     hold on
     handles = [handles, plot(2:nepochs,mean_sel(2:end),'Color',colors{i}, 'LineWidth',2)];
 end
-plot([0,5000],[0.03,0.03],'--k')
+plot([0,5000],[0.1,0.1],'--k')
 legend(handles, ops);
 axis([0, nepochs, 0, 1])
 xlabel('NFE')
