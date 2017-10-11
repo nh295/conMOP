@@ -82,11 +82,11 @@ for i=1:nexperiments
     ind = or(base_experiment_metric_sigHV(:,i)==1,base_experiment_metric_sigHV(:,i)==-1);
     plot(NFE(ind,1),mu(ind),'LineStyle','none','Marker','.','MarkerSize', 20,'Color',colors{i});
 end
-axis([0,5000,0,1.2])
+axis([0,10000,0,1.2])
 hold off
 xlabel('NFE')
 ylabel('HV')
-legend(handles, 'Static', 'Variable','Location','SouthEast')
+legend(handles, 'Fixed-length chromosome', 'Variable-length chromosome','Location','SouthEast')
 % legend(handles, 'baseline','100','250','500','1000', 'Location', 'SouthEast')
 set(gca,'FontSize',16);
 
@@ -109,7 +109,7 @@ hold on
 for i=1:nexperiments
     ecdf(attainment(i,:))
 end
-axis([0,5000,0,1])
+axis([0,10000,0,1])
 hold off
 xlabel('NFE')
 ylabel(sprintf('Probability of attaing %2.2f%% HV',thresholdHV*100))
@@ -134,11 +134,11 @@ for i=1:nexperiments
     ind = or(base_experiment_metric_sigIGD(:,i)==1,base_experiment_metric_sigIGD(:,i)==-1);
     plot(NFE(ind,1),mu(ind),'LineStyle','none','Marker','.','MarkerSize', 20,'Color',colors{i});
 end
-axis([0,5000,0,2])
+axis([0,10000,0,2])
 hold off
 xlabel('NFE')
 ylabel('IGD')
-legend(handles, 'Static', 'Variable','Location','NorthEast')
+legend(handles, 'Fixed-length chromosome', 'Variable-length chromosome','Location','NorthEast')
 % legend(handles, 'CPD','DNF','ACH','ACS', 'Location', 'SouthEast')
 set(gca,'FontSize',16);
 

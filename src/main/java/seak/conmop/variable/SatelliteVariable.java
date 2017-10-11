@@ -8,6 +8,11 @@ package seak.conmop.variable;
 import java.util.Objects;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
+import org.orekit.frames.Frame;
+import org.orekit.orbits.KeplerianOrbit;
+import org.orekit.orbits.Orbit;
+import org.orekit.orbits.PositionAngle;
+import org.orekit.time.AbsoluteDate;
 import seak.conmop.util.Bounds;
 
 /**
@@ -342,7 +347,24 @@ public class SatelliteVariable implements Variable {
     public Bounds<Double> getAnomBound() {
         return anomBound;
     }
-    
+
+    /**
+     * Converts the satellite variable into an Orekit Orbit object. Returns a
+     * new instance of an Orbit object.
+     *
+     * @param inertialFrame the inertial frame
+     * @param date the date at which the satellite variable's orbital elements
+     * hold true
+     * @param mu the gravitational constant
+     * @return a new instance of an Orbit object.
+     */
+    public Orbit toOrbit(Frame inertialFrame, AbsoluteDate date, double mu) {
+        return new KeplerianOrbit(
+                this.getSma(), this.getEcc(), this.getInc(),
+                this.getArgPer(), this.getRaan(), this.getTrueAnomaly(),
+                PositionAngle.TRUE, inertialFrame, date, mu);
+    }
+
     @Override
     public int hashCode() {
         int hash = 5;

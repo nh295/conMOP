@@ -53,7 +53,7 @@ numOps = length(ops);
 %plot
 nepochs = 100;
 
-maxEval = 5000;
+maxEval = 10000;
 epochLength = maxEval/nepochs;
 all_epoch_credit = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch credits from the operators
 all_epoch_select = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch selection count for the operators
@@ -113,8 +113,8 @@ end
 hold off
 set(gca,'FontSize',16);
 axis([0,nepochs, 0, maxCredit*1.1])
-set(gca,'XTick',0:nepochs/10:nepochs);
-set(gca,'XTickLabels',0:nepochs/10*epochLength:nepochs*epochLength);
+set(gca,'XTick',0:nepochs/5:nepochs);
+set(gca,'XTickLabels',0:nepochs/5*epochLength:nepochs*epochLength);
 xlabel('NFE')
 ylabel('Credit earned')
 legend(handles, ops);
@@ -126,7 +126,7 @@ handles = [];
 means = mean(all_epoch_select,3);
 mean_sum = sum(means,1);
 
-for i=numOps:-1:1
+for i=1:numOps
     X = [1:nepochs,fliplr(1:nepochs)];
     stddev = std(squeeze(all_epoch_select(i,:,:)),0,2)./mean_sum';
     stddev(isnan(stddev)) = 0;
@@ -144,8 +144,8 @@ legend(handles, ops);
 axis([0, nepochs, 0, 1])
 xlabel('NFE')
 ylabel('Selection frequency')
-set(gca,'XTick',0:nepochs/10:nepochs);
-set(gca,'XTickLabels',0:nepochs/10*epochLength:nepochs*epochLength);
+set(gca,'XTick',0:nepochs/5:nepochs);
+set(gca,'XTickLabels',0:nepochs/5*epochLength:nepochs*epochLength);
 hold off
 set(gca,'FontSize',16);
 %save files
