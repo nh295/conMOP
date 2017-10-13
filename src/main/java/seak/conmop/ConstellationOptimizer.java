@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -20,6 +21,7 @@ import org.hipparchus.stat.descriptive.DescriptiveStatistics;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.problem.AbstractProblem;
+import org.moeaframework.util.Vector;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
@@ -47,6 +49,7 @@ import seak.orekit.object.CoverageDefinition;
 import seak.orekit.object.Satellite;
 import seak.orekit.propagation.PropagatorFactory;
 import seak.orekit.scenario.Scenario;
+import seak.orekit.util.Orbits;
 import seak.orekit.util.OrekitConfig;
 
 /**
@@ -151,6 +154,11 @@ public class ConstellationOptimizer extends AbstractProblem {
     private final double tugDvLimit;
 
     /**
+     * The latitude [rad] of the launch site
+     */
+    private final double launchLatitude;
+
+    /**
      * a dummy constructor for analyzing hypervolumes after the optimization
      */
     public ConstellationOptimizer() {
@@ -208,6 +216,7 @@ public class ConstellationOptimizer extends AbstractProblem {
 
             this.raanTimeLimit = Double.parseDouble(properties.getProperty("raanTimeLimit", "604800"));
             this.tugDvLimit = Double.parseDouble(properties.getProperty("dvLimit", "2200"));
+            this.launchLatitude = Double.parseDouble(properties.getProperty("launchLatitude", "0"));
 
             //must use IERS_2003 and EME2000 frames to be consistent with STK
             Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2003, true);
@@ -273,8 +282,8 @@ public class ConstellationOptimizer extends AbstractProblem {
 //            stats.addValue(sat.getOrbit().getA());
 //        }
 //        solution.setObjective(2, stats.getMean());
-        Collection<List<SatelliteVariable>> deployment = deploymentStrategy(constel.getSatelliteVariables());
-        solution.setObjective(2, deployment.size());
+        double deploymentDeltaV = deploymentStrategy(constel.getSatelliteVariables());
+        solution.setObjective(2, deploymentDeltaV);
     }
 
     @Override
@@ -285,7 +294,13 @@ public class ConstellationOptimizer extends AbstractProblem {
         return soln;
     }
 
-    private Collection<List<SatelliteVariable>> deploymentStrategy(Collection<SatelliteVariable> satellites) {
+    /**
+     * Computes the delta v required to deploy the entire constellation
+     *
+     * @param satellites
+     * @return
+     */
+    private double deploymentStrategy(Collection<SatelliteVariable> satellites) {
         Collection< Collection<List<SatelliteVariable>>> feasibleDeployments = enumeratePartitions(satellites);
 
         ArrayList<List<SatelliteVariable>> minLaunchDeployment = new ArrayList<>();
@@ -301,25 +316,28 @@ public class ConstellationOptimizer extends AbstractProblem {
                 }
                 bestDeployment.add(bestOrder);
                 dv += ConstellationDeployment.deploymentDV(bestOrder);
-            }
-            if (!bestDeployment.isEmpty()) {
-                //best case is when only one launch is used. Only one case when one launch can be used for all satellites
-                if (bestDeployment.size() == 1){
-                    return bestDeployment;
-                }
                 
-                if (minLaunchDeployment.isEmpty() || bestDeployment.size() < minLaunchDeployment.size()) {
-                    minLaunchDeployment = bestDeployment;
-                    minDV = dv;
-                } else if (bestDeployment.size() == minLaunchDeployment.size() && dv < minDV) {
-                    minLaunchDeployment = bestDeployment;
-                }
+                //add the dv required to get to first satellite in deployment order
+                dv += Vector.magnitude(
+                        DeltaV.launch(
+                                launchLatitude, 
+                                Orbits.circularOrbitVelocity(bestOrder.get(0).getSma()),
+                                bestOrder.get(0).getInc(),
+                                0.0));
             }
+
+            if (minLaunchDeployment.isEmpty() || bestDeployment.size() < minLaunchDeployment.size()) {
+                minLaunchDeployment = bestDeployment;
+                minDV = dv;
+            } else if (bestDeployment.size() == minLaunchDeployment.size() && dv < minDV) {
+                minLaunchDeployment = bestDeployment;
+            }
+
         }
         if (minLaunchDeployment.isEmpty()) {
             throw new IllegalStateException("No deployment strategy found!");
         }
-        return minLaunchDeployment;
+        return minDV;
     }
 
     private Collection<Collection<List<SatelliteVariable>>> enumeratePartitions(Collection<SatelliteVariable> satellites) {

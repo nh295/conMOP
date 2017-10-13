@@ -7,6 +7,7 @@ package seak.conmop.launch;
 
 import org.hipparchus.util.FastMath;
 import org.orekit.utils.Constants;
+import seak.orekit.util.Orbits;
 
 /**
  * Computes delta v for different orbit maneuvers
@@ -25,7 +26,7 @@ public class DeltaV {
      */
     public static double hohmannFirstBurn(double ra, double rb) {
         double atx = (ra + rb) / 2;
-        double viA = FastMath.sqrt(Constants.WGS84_EARTH_MU / ra);
+        double viA = Orbits.circularOrbitVelocity(ra);
         double vtxA = FastMath.sqrt(Constants.WGS84_EARTH_MU * (2 / ra - 1 / atx));
 
         return FastMath.abs(vtxA - viA);
@@ -41,7 +42,7 @@ public class DeltaV {
      */
     public static double hohmannSecondBurn(double ra, double rb) {
         double atx = (ra + rb) / 2;
-        double vfB = FastMath.sqrt(Constants.WGS84_EARTH_MU / rb);
+        double vfB = Orbits.circularOrbitVelocity(ra);
         double vtxB = FastMath.sqrt(Constants.WGS84_EARTH_MU * (2 / rb - 1 / atx));
 
         return FastMath.abs(vfB - vtxB);

@@ -10,7 +10,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.hipparchus.util.FastMath;
-import org.orekit.utils.Constants;
 import seak.architecture.enumeration.FullFactorial;
 import seak.conmop.comparators.SatelliteComparator;
 import seak.conmop.util.OrbitalElementEnum;
@@ -106,7 +105,7 @@ public class ConstellationDeployment {
             double sma2 = satellites.get(i).getSma();
             double inc2 = satellites.get(i).getInc();
 
-            double vel1 = Constants.WGS84_EARTH_MU;
+            double vel1 = Orbits.circularOrbitVelocity(sma1);
             deltaV
                     += DeltaV.combinedPlaneChange(vel1,
                             vel1 + DeltaV.hohmannFirstBurn(sma1, sma2),

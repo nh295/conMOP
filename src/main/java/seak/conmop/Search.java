@@ -17,6 +17,8 @@ import aos.operatorselectors.AdaptivePursuit;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Properties;
@@ -54,6 +56,10 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
+import seak.architecture.enumeration.FullFactorial;
+import seak.conmop.launch.DeltaV;
+import seak.conmop.launch.LaunchStage;
+import seak.conmop.launch.LaunchVehicle;
 import seak.conmop.operators.BinaryUniformCrossover;
 import seak.conmop.operators.OrbitElementOperator;
 import seak.conmop.operators.RepairNumberOfSatellites;
@@ -61,10 +67,12 @@ import seak.conmop.operators.StaticOrbitElementOperator;
 import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
 import seak.conmop.operators.VariablePM;
+import seak.conmop.propulsion.Propellant;
 import seak.conmop.util.Bounds;
 import seak.orekit.STKGRID;
 import seak.orekit.object.CoverageDefinition;
 import seak.orekit.object.CoveragePoint;
+import seak.orekit.util.Orbits;
 import seak.orekit.util.OrekitConfig;
 
 /**
@@ -86,38 +94,42 @@ public class Search {
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(level);
         Logger.getGlobal().addHandler(handler);
-
+       
         //if running on a non-US machine, need the line below
         Locale.setDefault(new Locale("en", "US"));
 
         OrekitConfig.init();
-
+        
         TimeScale utc = TimeScalesFactory.getUTC();
         AbsoluteDate startDate = new AbsoluteDate(2016, 1, 1, 00, 00, 00.000, utc);
-        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 8, 00, 00, 00.000, utc);
+        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 15, 00, 00, 00.000, utc);
 
         //Enter satellite orbital parameters
         double a = Constants.WGS84_EARTH_EQUATORIAL_RADIUS;
-
+        
         PropagatorFactory pf = new PropagatorFactory(PropagatorType.KEPLERIAN);
 
         Properties problemProperty = new Properties();
-        problemProperty.setProperty("numThreads", "10");
+        problemProperty.setProperty("numThreads", "3");
 
-        Bounds<Integer> tBounds = new Bounds(1, 20);
+        Bounds<Integer> tBounds = new Bounds(1, 10);
         Bounds<Double> smaBounds = new Bounds(a + 400000, a + 1000000);
         Bounds<Double> incBounds = new Bounds(30. * DEG_TO_RAD, 100. * DEG_TO_RAD);
-
+        
+        //properties for launch deployment
+        problemProperty.setProperty("raanTimeLimit", "604800");
+        problemProperty.setProperty("dvLimit", "600");
+        
         Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2003, true);
         BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                 Constants.WGS84_EARTH_FLATTENING, earthFrame);
-        CoverageDefinition cdef = new CoverageDefinition("cdef", 20.0, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
+        CoverageDefinition cdef = new CoverageDefinition("cdef", 10.0, 0, 30, 0, 180, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
         Set<GeodeticPoint> points = new HashSet<>();
         for (CoveragePoint pt : cdef.getPoints()) {
             points.add(pt.getPoint());
         }
         Problem problem = new ConstellationOptimizer("", startDate, endDate, pf,
-                points, FastMath.toRadians(45),
+                points, FastMath.toRadians(51.),
                 tBounds, smaBounds, incBounds, problemProperty);
 
         //set up the search parameters
@@ -126,7 +138,7 @@ public class Search {
 //        String mode = "static_";
         String mode = "variable_";
 
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < 1; i++) {
 
             long startTime = System.nanoTime();
             Initialization initialization = new RandomInitialization(problem,
