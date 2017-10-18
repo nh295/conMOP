@@ -8,8 +8,8 @@ package seak.conmop.variable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import org.moeaframework.core.PRNG;
-import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variable;
 import org.orekit.utils.Constants;
 import seak.conmop.util.Bounds;
@@ -321,5 +321,60 @@ public class ConstellationVariable implements Variable {
     public Bounds<Double> getAnomBound() {
         return anomBound;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 41 * hash + Objects.hashCode(this.satelliteBound);
+        hash = 41 * hash + Objects.hashCode(this.smaBound);
+        hash = 41 * hash + Objects.hashCode(this.eccBound);
+        hash = 41 * hash + Objects.hashCode(this.incBound);
+        hash = 41 * hash + Objects.hashCode(this.argPerBound);
+        hash = 41 * hash + Objects.hashCode(this.raanBound);
+        hash = 41 * hash + Objects.hashCode(this.anomBound);
+        hash = 41 * hash + Objects.hashCode(this.satelliteVars);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ConstellationVariable other = (ConstellationVariable) obj;
+        if (!Objects.equals(this.satelliteBound, other.satelliteBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.smaBound, other.smaBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.eccBound, other.eccBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.incBound, other.incBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.argPerBound, other.argPerBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.raanBound, other.raanBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.anomBound, other.anomBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.satelliteVars, other.satelliteVars)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 
     }

@@ -5,8 +5,7 @@
  */
 package seak.conmop;
 
-import aos.IO.IOCreditHistory;
-import aos.IO.IOSelectionHistory;
+import aos.IO.AOSHistoryIO;
 import aos.aos.AOSMOEA;
 import aos.aos.AOSStrategy;
 import aos.creditassigment.ICreditAssignment;
@@ -98,11 +97,11 @@ public class Search {
         //if running on a non-US machine, need the line below
         Locale.setDefault(new Locale("en", "US"));
 
-        OrekitConfig.init();
+        OrekitConfig.init(3);
         
         TimeScale utc = TimeScalesFactory.getUTC();
         AbsoluteDate startDate = new AbsoluteDate(2016, 1, 1, 00, 00, 00.000, utc);
-        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 15, 00, 00, 00.000, utc);
+        AbsoluteDate endDate = new AbsoluteDate(2016, 1, 8, 00, 00, 00.000, utc);
 
         //Enter satellite orbital parameters
         double a = Constants.WGS84_EARTH_EQUATORIAL_RADIUS;
@@ -123,7 +122,7 @@ public class Search {
         Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2003, true);
         BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                 Constants.WGS84_EARTH_FLATTENING, earthFrame);
-        CoverageDefinition cdef = new CoverageDefinition("cdef", 10.0, 0, 30, 0, 180, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
+        CoverageDefinition cdef = new CoverageDefinition("cdef", 20.0, 0, 30, 0, 180, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
         Set<GeodeticPoint> points = new HashSet<>();
         for (CoveragePoint pt : cdef.getPoints()) {
             points.add(pt.getPoint());
@@ -182,9 +181,7 @@ public class Search {
 
             //create AOS
             AOSStrategy aosStrategy = new AOSStrategy(creditAssignment, operatorSelector);
-            AOSMOEA aos = new AOSMOEA(emoea, variation, aosStrategy);
-
-            HashSet<Solution> allSolutions = new HashSet<>();
+            AOSMOEA aos = new AOSMOEA(emoea, variation, aosStrategy, true);
 
             System.out.println(String.format("Initializing population... Size = %d", populationSize));
             while (aos.getNumberOfEvaluations() < maxNFE) {
@@ -195,9 +192,6 @@ public class Search {
                                 + " Approximate time remaining %10f min.",
                                 aos.getNumberOfEvaluations(), maxNFE, currentTime,
                                 currentTime / emoea.getNumberOfEvaluations() * (maxNFE - aos.getNumberOfEvaluations())));
-                for (Solution solution : aos.getPopulation()) {
-                    allSolutions.add(solution);
-                }
             }
             System.out.println(aos.getArchive().size());
 
@@ -205,14 +199,16 @@ public class Search {
             Logger.getGlobal().finest(String.format("Took %.4f sec", (endTime - startTime) / Math.pow(10, 9)));
 
             try {
-                PopulationIO.write(new File(mode + i + ".pop"), allSolutions);
-                PopulationIO.writeObjectives(new File(mode + i + ".obj"), allSolutions);
+                PopulationIO.write(new File(mode + i + ".pop"), aos.getAllSolutions());
+                PopulationIO.writeObjectives(new File(mode + i + ".obj"), aos.getAllSolutions());
             } catch (IOException ex) {
                 Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
             }
-            IOCreditHistory.saveHistory(aos.getCreditHistory(), mode + i + ".credit", ",");
-            IOSelectionHistory.saveHistory(aos.getSelectionHistory(), mode + i + ".select", ",");
+            AOSHistoryIO.saveCreditHistory(aos.getCreditHistory(), new File(mode + i + ".credit"), ",");
+            AOSHistoryIO.saveSelectionHistory(aos.getSelectionHistory(), new File(mode + i + ".select"), ",");
         }
+        
+        OrekitConfig.end();
     }
 
 }
