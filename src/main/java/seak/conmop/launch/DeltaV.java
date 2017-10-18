@@ -84,8 +84,8 @@ public class DeltaV {
      * @return the delta v required for a simple plane change
      */
     public static double combinedPlaneChange(double veli, double velf, double theta) {
-        return FastMath.sqrt(FastMath.pow(veli, 2)
-                + FastMath.pow(velf, 2)
+        return FastMath.sqrt(veli*veli
+                + velf*velf
                 - 2 * veli * velf * FastMath.cos(theta));
     }
 
