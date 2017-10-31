@@ -66,6 +66,10 @@ import seak.conmop.operators.StaticOrbitElementOperator;
 import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
 import seak.conmop.operators.VariablePM;
+import seak.conmop.operators.knowledge.DecreasePlanes;
+import seak.conmop.operators.knowledge.DistributeAnomaly;
+import seak.conmop.operators.knowledge.DistributePlanes;
+import seak.conmop.operators.knowledge.IncreasePlanes;
 import seak.conmop.propulsion.Propellant;
 import seak.conmop.util.Bounds;
 import seak.orekit.STKGRID;
@@ -113,7 +117,7 @@ public class Search {
 
         Bounds<Integer> tBounds = new Bounds(1, 10);
         Bounds<Double> smaBounds = new Bounds(a + 400000, a + 1000000);
-        Bounds<Double> incBounds = new Bounds(30. * DEG_TO_RAD, 100. * DEG_TO_RAD);
+        Bounds<Double> incBounds = new Bounds(20. * DEG_TO_RAD, 100. * DEG_TO_RAD);
         
         //properties for launch deployment
         problemProperty.setProperty("raanTimeLimit", "604800");
@@ -122,7 +126,7 @@ public class Search {
         Frame earthFrame = FramesFactory.getITRF(IERSConventions.IERS_2003, true);
         BodyShape earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                 Constants.WGS84_EARTH_FLATTENING, earthFrame);
-        CoverageDefinition cdef = new CoverageDefinition("cdef", 20.0, 0, 30, 0, 180, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
+        CoverageDefinition cdef = new CoverageDefinition("cdef", 20.0, -30, 30, -180, 180, earthShape, CoverageDefinition.GridStyle.EQUAL_AREA);
         Set<GeodeticPoint> points = new HashSet<>();
         for (CoveragePoint pt : cdef.getPoints()) {
             points.add(pt.getPoint());
@@ -135,7 +139,7 @@ public class Search {
         int populationSize = 100;
         int maxNFE = 5000;
 //        String mode = "static_";
-        String mode = "variable_";
+        String mode = "variable_extra";
 
         for (int i = 0; i < 1; i++) {
 
@@ -145,7 +149,7 @@ public class Search {
 
             Population population = new Population();
             DominanceComparator comparator = new ParetoDominanceComparator();
-            EpsilonBoxDominanceArchive archive = new EpsilonBoxDominanceArchive(new double[]{1, 0.1});
+            EpsilonBoxDominanceArchive archive = new EpsilonBoxDominanceArchive(new double[]{1, 25});
             final TournamentSelection selection = new TournamentSelection(2, comparator);
             AOSVariation variation = new AOSVariation();
             EpsilonMOEA emoea = new EpsilonMOEA(problem, population, archive,
@@ -161,6 +165,10 @@ public class Search {
             operators.add(new CompoundVariation(
                     new VariableLengthOnePointCrossover(1.0, true),
                     new RepairNumberOfSatellites()));
+            operators.add(new DecreasePlanes());
+            operators.add(new DistributeAnomaly());
+            operators.add(new DistributePlanes());
+            operators.add(new IncreasePlanes());
 //            operators.add(new CompoundVariation(
 //                    new StaticOrbitElementOperator(
 //                            new CompoundVariation(new SBX(1, 20),
@@ -199,8 +207,12 @@ public class Search {
             Logger.getGlobal().finest(String.format("Took %.4f sec", (endTime - startTime) / Math.pow(10, 9)));
 
             try {
-                PopulationIO.write(new File(mode + i + ".pop"), aos.getAllSolutions());
-                PopulationIO.writeObjectives(new File(mode + i + ".obj"), aos.getAllSolutions());
+                PopulationIO.write(new File(mode + i + "_all.pop"), aos.getAllSolutions());
+                PopulationIO.write(new File(mode + i + ".pop"), aos.getPopulation());
+                PopulationIO.write(new File(mode + i + "_archive.pop"), aos.getArchive());
+                PopulationIO.writeObjectives(new File(mode + i + "_all.obj"), aos.getAllSolutions());
+                PopulationIO.writeObjectives(new File(mode + i + ".obj"), aos.getPopulation());
+                PopulationIO.writeObjectives(new File(mode + i + "_archive.obj"), aos.getPopulation());
             } catch (IOException ex) {
                 Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
             }

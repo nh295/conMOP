@@ -7,14 +7,19 @@ package seak.conmop.variable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Variable;
 import org.orekit.utils.Constants;
+import seak.conmop.deployment.DeploymentStrategy;
+import seak.conmop.deployment.Installment;
 import seak.conmop.util.Bounds;
 
 /**
+ * A variable containing the information for a constellation. All satellites
+ * within this variable have the same bounds on their orbital parameters
  *
  * @author nhitomi
  */
@@ -61,6 +66,11 @@ public class ConstellationVariable implements Variable {
      * Satellite variables
      */
     private final List<SatelliteVariable> satelliteVars;
+
+    /**
+     * Deployment strategy. Auxiliary information that is not a decision.
+     */
+    private DeploymentStrategy deploymentStrategy;
 
     /**
      * Creates a new variable for a satellite. Assumes all valid values are
@@ -147,7 +157,12 @@ public class ConstellationVariable implements Variable {
         this(var.satelliteBound,
                 var.smaBound, var.eccBound, var.incBound,
                 var.argPerBound, var.raanBound, var.anomBound);
-        this.satelliteVars.addAll(var.getSatelliteVariables());
+        for (SatelliteVariable sat : var.getSatelliteVariables()) {
+            satelliteVars.add((SatelliteVariable) sat.copy());
+        }
+        if (var.getDeploymentStrategy() != null) {
+            this.setDeploymentStrategy(var.getDeploymentStrategy());
+        }
     }
 
     private void checkBounds(Bounds<Integer> satelliteBound,
@@ -322,6 +337,51 @@ public class ConstellationVariable implements Variable {
         return anomBound;
     }
 
+    /**
+     * Gets this constellation's deployment strategy
+     *
+     * @return this constellation's deployment strategy
+     */
+    public DeploymentStrategy getDeploymentStrategy() {
+        return deploymentStrategy;
+    }
+
+    /**
+     * Sets this constellation's deployment strategy. This method will save the
+     * deployment strategy using the satellite variables stored within this
+     * instance. Deployment strategy must assign every satellite in this
+     * constellation and must not include other satellites other than the ones
+     * in this constellation.
+     *
+     * @param deploymentStrategy this constellation's deployment strategy
+     * @return true if the deployment strategy was successfully set. else false.
+     */
+    public final boolean setDeploymentStrategy(DeploymentStrategy deploymentStrategy) {
+        int nSatsInDeployment = 0;
+        int nSatsAssigned = 0;
+
+        ArrayList<Installment> newDeployment = new ArrayList<>();
+        for (Installment installment : deploymentStrategy.getDeploymentStrategy()) {
+            nSatsInDeployment += installment.getSatellites().size();
+            HashSet<SatelliteVariable> set = new HashSet<>(installment.getSatellites());
+            ArrayList<SatelliteVariable> sats = new ArrayList<>();
+            for (SatelliteVariable sat : this.getSatelliteVariables()) {
+                if (set.contains(sat)) {
+                    sats.add(sat);
+                    nSatsAssigned++;
+                }
+            }
+            newDeployment.add(new Installment(sats, installment.getLaunchDV(), installment.getOtherDV()));
+        }
+        if (nSatsInDeployment > getNumberOfSatellites()
+                || nSatsAssigned < getNumberOfSatellites()) {
+            this.deploymentStrategy = null;
+            return false;
+        }
+        this.deploymentStrategy = new DeploymentStrategy(newDeployment);
+        return true;
+    }
+
     @Override
     public int hashCode() {
         int hash = 5;
@@ -374,7 +434,16 @@ public class ConstellationVariable implements Variable {
         }
         return true;
     }
-    
-    
 
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for (SatelliteVariable var : getSatelliteVariables()) {
+            sb.append(String.format("a: %.5f; e: %.5f; i: %.5f; ap: %.5f; raan: %.5f; v: %.5f;\n",
+                    var.getSma(), var.getEcc(), var.getInc(), var.getArgPer(), var.getRaan(), var.getTrueAnomaly()));
+        }
+
+        return sb.toString();
     }
+
+}

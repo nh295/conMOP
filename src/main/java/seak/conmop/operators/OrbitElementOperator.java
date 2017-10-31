@@ -7,9 +7,7 @@ package seak.conmop.operators;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import org.hipparchus.util.FastMath;
-import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variation;
 import org.moeaframework.core.variable.RealVariable;
@@ -134,12 +132,11 @@ public class OrbitElementOperator implements Variation {
 
         Solution[] children = operator.evolve(parents);
 
-        ConstellationVariable[] out = new ConstellationVariable[constellations.length];
+        ConstellationVariable[] out = constellations;
         for (int i = 0; i < children.length; i++) {
             ArrayList<SatelliteVariable> satList = new ArrayList<>(constellations[i].getSatelliteVariables());
             int satCount = 0;
             Solution child = children[i];
-            out[i] = (ConstellationVariable) constellations[i].copy();
             for (int j = 0; j< minNSats; j++) {
                 SatelliteVariable satVar = (SatelliteVariable) satsToCross[i][j].copy();
                 satVar.setSma(((RealVariable) child.getVariable(satCount + 0)).getValue());

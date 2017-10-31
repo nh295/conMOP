@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package seak.conmop.launch;
+package seak.conmop.deployment;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -12,6 +12,7 @@ import java.util.List;
 import org.hipparchus.util.FastMath;
 import seak.architecture.enumeration.FullFactorial;
 import seak.conmop.comparators.SatelliteComparator;
+import seak.conmop.launch.DeltaV;
 import seak.conmop.util.OrbitalElementEnum;
 import seak.conmop.variable.SatelliteVariable;
 import seak.orekit.util.Orbits;
@@ -135,7 +136,7 @@ public class ConstellationDeployment {
         double relativePrecessionRate = FastMath.abs(Orbits.nodalPrecession(sat1.getSma(), sat1.getEcc(), sat1.getInc())
                 - Orbits.nodalPrecession(sat2.getSma(), sat2.getEcc(), sat2.getInc()));
 
-        return deltaRaan > relativePrecessionRate * time;
+        return deltaRaan < relativePrecessionRate * time;
     }
 
 }

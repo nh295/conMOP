@@ -218,7 +218,7 @@ public class WalkerOptimizer extends AbstractProblem {
         }
 
         GroundEventAnalyzer gea = new GroundEventAnalyzer(fovEvent.getEvents(cdef));
-        DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false);
+        DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false, new Properties());
         solution.setObjective(0, gapStats.getMean());
         solution.setObjective(1, walker.getSatellites().size());
     }

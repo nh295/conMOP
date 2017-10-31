@@ -5,12 +5,15 @@
  */
 package seak.conmop;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -34,7 +37,9 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
-import seak.conmop.launch.ConstellationDeployment;
+import seak.conmop.deployment.ConstellationDeployment;
+import seak.conmop.deployment.DeploymentStrategy;
+import seak.conmop.deployment.Installment;
 import seak.conmop.launch.DeltaV;
 import seak.conmop.util.Bounds;
 import seak.conmop.variable.BooleanSatelliteVariable;
@@ -159,6 +164,11 @@ public class ConstellationOptimizer extends AbstractProblem {
     private final double launchLatitude;
 
     /**
+     * Latitude weights
+     */
+    private final HashMap<Double, Double> wts;
+
+    /**
      * a dummy constructor for analyzing hypervolumes after the optimization
      */
     public ConstellationOptimizer() {
@@ -194,10 +204,9 @@ public class ConstellationOptimizer extends AbstractProblem {
             PropagatorFactory propagatorFactory, Set<GeodeticPoint> poi, double halfAngle, Bounds<Integer> nSatBound,
             Bounds<Double> sma, Bounds<Double> ecc, Bounds<Double> inc,
             Bounds<Double> raan, Bounds<Double> ap, Bounds<Double> ta, Properties properties) {
-        super(1, 2);
+        super(1, 3);
 
         try {
-            OrekitConfig.init();
             this.startDate = startDate;
             this.endDate = endDate;
             this.timeScale = TimeScalesFactory.getUTC();
@@ -224,6 +233,20 @@ public class ConstellationOptimizer extends AbstractProblem {
             this.earthShape = new OneAxisEllipsoid(Constants.WGS84_EARTH_EQUATORIAL_RADIUS,
                     Constants.WGS84_EARTH_FLATTENING, earthFrame);
             this.earthMu = Constants.WGS84_EARTH_MU;
+
+            //load in weights
+            this.wts = new HashMap<>();
+
+            try (BufferedReader br = new BufferedReader(new FileReader(new File("tropicsWts.csv")))) {
+                String line = br.readLine();
+                while (line != null) {
+                    String[] args = line.split(",");
+                    wts.put(FastMath.toRadians(Double.parseDouble(args[0])), Double.parseDouble(args[1]));
+                    line = br.readLine();
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(ConstellationOptimizer.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
         } catch (OrekitException ex) {
             Logger.getLogger(ConstellationOptimizer.class.getName()).log(Level.SEVERE, null, ex);
@@ -258,8 +281,7 @@ public class ConstellationOptimizer extends AbstractProblem {
 
         ArrayList<EventAnalysis> eventanalyses = new ArrayList<>();
         FastCoverageAnalysis fca = new FastCoverageAnalysis(startDate, endDate,
-                inertialFrame, cdefSet, halfAngle,
-                Integer.parseInt(properties.getProperty("numThreads", "1")));
+                inertialFrame, cdefSet, halfAngle);
         eventanalyses.add(fca);
 
         Scenario scen = new Scenario("", startDate, endDate, timeScale,
@@ -272,9 +294,19 @@ public class ConstellationOptimizer extends AbstractProblem {
         }
 
         GroundEventAnalyzer gea = new GroundEventAnalyzer(fca.getEvents(cdef));
-        DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false);
-        solution.setObjective(0, gapStats.getMean());
-        solution.setObjective(1, gapStats.getPercentile(90));
+        Properties properties = new Properties();
+        properties.setProperty("threshold", "7200.0");
+
+        DescriptiveStatistics covMetric = new DescriptiveStatistics();
+        for (double lat : wts.keySet()) {
+            DescriptiveStatistics gapStat = gea.getStatistics(AnalysisMetric.DURATION_GEQ, false, new double[]{lat - 0.01, lat + 0.01}, new double[]{-FastMath.PI, FastMath.PI}, properties);
+            covMetric.addValue(gapStat.getMean() * wts.get(lat));
+        }
+        DescriptiveStatistics respStats = gea.getStatistics(AnalysisMetric.MEAN_TIME_TO_T, false, properties);
+        DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false, properties);
+        solution.setObjective(0, respStats.getMean());
+        solution.setObjective(1, satelliteList.size());
+//        solution.setObjective(1, gapStats.getPercentile(90));
 
 //        //compute average semi-major axis
 //        DescriptiveStatistics stats = new DescriptiveStatistics();
@@ -282,8 +314,9 @@ public class ConstellationOptimizer extends AbstractProblem {
 //            stats.addValue(sat.getOrbit().getA());
 //        }
 //        solution.setObjective(2, stats.getMean());
-        double deploymentDeltaV = deploymentStrategy(constel.getSatelliteVariables());
-        solution.setObjective(1, deploymentDeltaV);
+        DeploymentStrategy deployment = deploymentStrategy(constel.getSatelliteVariables());
+        constel.setDeploymentStrategy(deployment);
+        solution.setObjective(2, deployment.getTotalDV());
     }
 
     @Override
@@ -300,30 +333,41 @@ public class ConstellationOptimizer extends AbstractProblem {
      * @param satellites
      * @return
      */
-    private double deploymentStrategy(Collection<SatelliteVariable> satellites) {
+    private DeploymentStrategy deploymentStrategy(Collection<SatelliteVariable> satellites) {
         Collection< Collection<List<SatelliteVariable>>> feasibleDeployments = enumeratePartitions(satellites);
 
-        ArrayList<List<SatelliteVariable>> minLaunchDeployment = new ArrayList<>();
+        ArrayList<Installment> minLaunchDeployment = new ArrayList<>();
         double minDV = Double.POSITIVE_INFINITY;
         for (Collection<List<SatelliteVariable>> deployment : feasibleDeployments) {
+            ArrayList<Installment> bestDeployment = new ArrayList<>();
             double dv = 0.0;
-            ArrayList<List<SatelliteVariable>> bestDeployment = new ArrayList<>();
+            int nSatAssinged = 0;
+
             for (List<SatelliteVariable> launchGroup : deployment) {
                 List<SatelliteVariable> bestOrder = ConstellationDeployment.deltaVCompatible(launchGroup, tugDvLimit);
                 if (bestOrder.isEmpty()) {
                     bestDeployment.clear();
                     break;
                 }
-                bestDeployment.add(bestOrder);
-                dv += ConstellationDeployment.deploymentDV(bestOrder);
-                
+
+                double tugDV = ConstellationDeployment.deploymentDV(bestOrder);
+
                 //add the dv required to get to first satellite in deployment order
-                dv += Vector.magnitude(
+                double launchDV = Vector.magnitude(
                         DeltaV.launch(
-                                launchLatitude, 
+                                launchLatitude,
                                 Orbits.circularOrbitVelocity(bestOrder.get(0).getSma()),
                                 bestOrder.get(0).getInc(),
                                 0.0));
+
+                bestDeployment.add(new Installment(bestOrder, launchDV, tugDV));
+                nSatAssinged += bestOrder.size();
+
+                dv += tugDV + launchDV;
+            }
+
+            if (nSatAssinged != satellites.size()) {
+                throw new IllegalStateException("All satellites not included in deployment strategy");
             }
 
             if (minLaunchDeployment.isEmpty() || bestDeployment.size() < minLaunchDeployment.size()) {
@@ -337,7 +381,7 @@ public class ConstellationOptimizer extends AbstractProblem {
         if (minLaunchDeployment.isEmpty()) {
             throw new IllegalStateException("No deployment strategy found!");
         }
-        return minDV;
+        return new DeploymentStrategy(minLaunchDeployment);
     }
 
     private Collection<Collection<List<SatelliteVariable>>> enumeratePartitions(Collection<SatelliteVariable> satellites) {
@@ -428,7 +472,6 @@ public class ConstellationOptimizer extends AbstractProblem {
             }
             out.add(deployment);
         }
-
         return out;
     }
 
