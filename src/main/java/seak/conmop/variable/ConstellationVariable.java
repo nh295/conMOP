@@ -363,12 +363,17 @@ public class ConstellationVariable implements Variable {
         ArrayList<Installment> newDeployment = new ArrayList<>();
         for (Installment installment : deploymentStrategy.getInstallments()) {
             nSatsInDeployment += installment.getSatellites().size();
-            HashSet<SatelliteVariable> set = new HashSet<>(installment.getSatellites());
+            ArrayList<SatelliteVariable> constelSatellites = new ArrayList<>(this.getSatelliteVariables());
+            List<SatelliteVariable> installSatellites = installment.getSatellites();
             ArrayList<SatelliteVariable> sats = new ArrayList<>();
-            for (SatelliteVariable sat : this.getSatelliteVariables()) {
-                if (set.contains(sat)) {
-                    sats.add(sat);
-                    nSatsAssigned++;
+            for (SatelliteVariable sat : installSatellites) {
+                for (int i = 0; i < constelSatellites.size(); i++) {
+                    if (sat.equals(constelSatellites.get(i))) {
+                        sats.add(sat);
+                        nSatsAssigned++;
+                        constelSatellites.remove(i);
+                        break;
+                    }
                 }
             }
             newDeployment.add(new Installment(sats, installment.getLaunchDV(), installment.getOtherDV()));

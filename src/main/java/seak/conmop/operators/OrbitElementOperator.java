@@ -7,6 +7,7 @@ package seak.conmop.operators;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import org.hipparchus.util.FastMath;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
