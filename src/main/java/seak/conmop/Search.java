@@ -139,9 +139,10 @@ public class Search {
         int populationSize = 100;
         int maxNFE = 5000;
 //        String mode = "static_";
-        String mode = "variable_extra";
+//        String mode = "variable_extra";
+        String mode = "knowledge";
 
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 30; i++) {
 
             long startTime = System.nanoTime();
             Initialization initialization = new RandomInitialization(problem,

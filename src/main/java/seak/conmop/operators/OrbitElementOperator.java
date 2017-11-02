@@ -8,6 +8,7 @@ package seak.conmop.operators;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.util.FastMath;
+import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variation;
 import org.moeaframework.core.variable.RealVariable;
@@ -100,13 +101,8 @@ public class OrbitElementOperator implements Variation {
         int[][] satsToCrossIndex = new int[constellations.length][minNSats];
         for (int i = 0; i < constellations.length; i++) {
             ArrayList<SatelliteVariable> candidates = new ArrayList(constellations[i].getSatelliteVariables());
-            ArrayList<Integer> candidatesIndices = new ArrayList<>();
-            for(int j=0; j<candidates.size(); j++){
-                candidatesIndices.add(j);
-            }
-            Collections.shuffle(candidates);
             for(int j=0; j<minNSats; j++){
-                int index = candidatesIndices.get(j);
+                int index = PRNG.nextInt(candidates.size());
                 satsToCross[i][j] = candidates.get(index);
                 satsToCrossIndex[i][j] = index;
             }
@@ -138,7 +134,7 @@ public class OrbitElementOperator implements Variation {
             int satCount = 0;
             Solution child = children[i];
             for (int j = 0; j< minNSats; j++) {
-                SatelliteVariable satVar = (SatelliteVariable) satsToCross[i][j].copy();
+                SatelliteVariable satVar = (SatelliteVariable) satsToCross[i][j];
                 satVar.setSma(((RealVariable) child.getVariable(satCount + 0)).getValue());
                 satVar.setEcc(((RealVariable) child.getVariable(satCount + 1)).getValue());
                 satVar.setInc(((RealVariable) child.getVariable(satCount + 2)).getValue());
@@ -178,7 +174,7 @@ public class OrbitElementOperator implements Variation {
         SatelliteVariable[] out = new SatelliteVariable[satellites.length];
         for (int i = 0; i < satellites.length; i++) {
             Solution child = offspring[i];
-            SatelliteVariable sat = (SatelliteVariable) satellites[i].copy();
+            SatelliteVariable sat = satellites[i];
             sat.setSma(((RealVariable) child.getVariable(0)).getValue());
             sat.setEcc(((RealVariable) child.getVariable(1)).getValue());
             sat.setInc(((RealVariable) child.getVariable(2)).getValue());

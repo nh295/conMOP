@@ -118,14 +118,13 @@ public class StaticOrbitElementOperator implements Variation {
 
         Solution[] children = operator.evolve(parents);
 
-        ConstellationVariable[] out = new ConstellationVariable[constellations.length];
+        ConstellationVariable[] out = constellations;
         for (int i = 0; i < children.length; i++) {
             ArrayList<SatelliteVariable> satList = new ArrayList<>();
             int satCount = 0;
             Solution child = children[i];
-            out[i] = (ConstellationVariable) constellations[i].copy();
             for (SatelliteVariable sat : constellations[i].getSatelliteVariables()) {
-                BooleanSatelliteVariable satVar = (BooleanSatelliteVariable) sat.copy();
+                BooleanSatelliteVariable satVar = (BooleanSatelliteVariable) sat;
                 satVar.setSma(((RealVariable) child.getVariable(satCount + 0)).getValue());
                 satVar.setEcc(((RealVariable) child.getVariable(satCount + 1)).getValue());
                 satVar.setInc(((RealVariable) child.getVariable(satCount + 2)).getValue());
@@ -167,7 +166,7 @@ public class StaticOrbitElementOperator implements Variation {
         SatelliteVariable[] out = new SatelliteVariable[satellites.length];
         for (int i = 0; i < satellites.length; i++) {
             Solution child = offspring[i];
-            BooleanSatelliteVariable sat = (BooleanSatelliteVariable) satellites[i].copy();
+            BooleanSatelliteVariable sat = (BooleanSatelliteVariable) satellites[i];
             sat.setSma(((RealVariable) child.getVariable(0)).getValue());
             sat.setEcc(((RealVariable) child.getVariable(1)).getValue());
             sat.setInc(((RealVariable) child.getVariable(2)).getValue());

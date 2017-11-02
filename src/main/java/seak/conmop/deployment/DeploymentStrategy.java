@@ -50,7 +50,7 @@ public class DeploymentStrategy implements Serializable{
      * Gets the grouped deployments in this strategy
      * @return the grouped deployments in this strategy
      */
-    public Collection<Installment> getDeploymentStrategy() {
+    public Collection<Installment> getInstallments() {
         return deploymentStrategy;
     }
 }

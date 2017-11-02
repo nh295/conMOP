@@ -7,7 +7,6 @@ package seak.conmop.operators.knowledge;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import org.hipparchus.stat.descriptive.DescriptiveStatistics;
 import org.hipparchus.util.FastMath;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
@@ -58,7 +57,7 @@ public class DistributeAnomaly implements Variation {
 
         //randomly select a installment to operate on
         ArrayList<Installment> installmentCandidates = new ArrayList();
-        for (Installment installment : deploymentStrategy.getDeploymentStrategy()) {
+        for (Installment installment : deploymentStrategy.getInstallments()) {
             if (installment.getSatellites().size() > 1) {
                 installmentCandidates.add(installment);
             }

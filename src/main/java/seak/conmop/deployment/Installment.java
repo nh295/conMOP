@@ -6,7 +6,9 @@
 package seak.conmop.deployment;
 
 import java.io.Serializable;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import seak.conmop.variable.SatelliteVariable;
 
@@ -23,7 +25,7 @@ public class Installment implements Serializable{
     /**
      * The satellites that are deployed in this installment
      */
-    private final Collection<SatelliteVariable> satellites;
+    private final List<SatelliteVariable> satellites;
     
     /**
      * The launch deltaV [m/s] required to deploy this installment
@@ -41,8 +43,9 @@ public class Installment implements Serializable{
      * @param launchDV The launch deltaV [m/s] required to deploy this installment
      * @param otherDV Other deltaV [m/s] (e.g. from a space tug required to deploy this installment
      */
-    public Installment(Collection<SatelliteVariable> satellites, double launchDV, double otherDV) {
-        this.satellites = satellites;
+    public Installment(List<SatelliteVariable> satellites, double launchDV, double otherDV) {
+        this.satellites = new ArrayList(satellites);
+        Collections.unmodifiableList(this.satellites);
         this.launchDV = launchDV;
         this.otherDV = otherDV;
     }
@@ -51,7 +54,7 @@ public class Installment implements Serializable{
      * Gets the satellites that are deployed in this installment
      * @return the satellites that are deployed in this installment
      */
-    public Collection<SatelliteVariable> getSatellites() {
+    public List<SatelliteVariable> getSatellites() {
         return satellites;
     }
 

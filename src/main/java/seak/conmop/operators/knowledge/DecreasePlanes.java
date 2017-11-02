@@ -37,7 +37,6 @@ public class DecreasePlanes implements Variation {
                 child.setVariable(i, evolve((ConstellationVariable) child.getVariable(i)));
             }
         }
-
         return new Solution[]{child};
     }
 
@@ -50,14 +49,14 @@ public class DecreasePlanes implements Variation {
      */
     private ConstellationVariable evolve(ConstellationVariable constelVariable) {
         if(constelVariable.getNumberOfSatellites() <= 1 ||
-                constelVariable.getDeploymentStrategy().getDeploymentStrategy().size() <= 1){
+                constelVariable.getDeploymentStrategy().getInstallments().size() <= 1){
             return constelVariable;
         }
         
         DeploymentStrategy deploymentStrategy = constelVariable.getDeploymentStrategy();
 
         //Select an installment to move
-        ArrayList<Installment> candidates = new ArrayList(deploymentStrategy.getDeploymentStrategy());
+        ArrayList<Installment> candidates = new ArrayList(deploymentStrategy.getInstallments());
         Collections.shuffle(candidates);
         Installment candidate = candidates.get(0);
 

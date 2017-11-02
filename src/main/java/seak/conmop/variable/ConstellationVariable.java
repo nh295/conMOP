@@ -361,7 +361,7 @@ public class ConstellationVariable implements Variable {
         int nSatsAssigned = 0;
 
         ArrayList<Installment> newDeployment = new ArrayList<>();
-        for (Installment installment : deploymentStrategy.getDeploymentStrategy()) {
+        for (Installment installment : deploymentStrategy.getInstallments()) {
             nSatsInDeployment += installment.getSatellites().size();
             HashSet<SatelliteVariable> set = new HashSet<>(installment.getSatellites());
             ArrayList<SatelliteVariable> sats = new ArrayList<>();

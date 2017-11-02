@@ -5,10 +5,6 @@
  */
 package seak.conmop;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,9 +15,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math3.util.FastMath;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
-import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
 import org.moeaframework.problem.AbstractProblem;
 import org.moeaframework.util.Vector;
@@ -55,7 +49,6 @@ import seak.orekit.object.Satellite;
 import seak.orekit.propagation.PropagatorFactory;
 import seak.orekit.scenario.Scenario;
 import seak.orekit.util.Orbits;
-import seak.orekit.util.OrekitConfig;
 
 /**
  * Problem to optimize the number of satellites in a constellation and their
@@ -164,15 +157,10 @@ public class ConstellationOptimizer extends AbstractProblem {
     private final double launchLatitude;
 
     /**
-     * Latitude weights
-     */
-    private final HashMap<Double, Double> wts;
-
-    /**
      * a dummy constructor for analyzing hypervolumes after the optimization
      */
     public ConstellationOptimizer() {
-        this(null, null, null, null, null, 0.0, null, null, null, null);
+        this(null, null, null, null, null, 0.0, null, null, null, new Properties());
     }
 
     /**
@@ -234,20 +222,6 @@ public class ConstellationOptimizer extends AbstractProblem {
                     Constants.WGS84_EARTH_FLATTENING, earthFrame);
             this.earthMu = Constants.WGS84_EARTH_MU;
 
-            //load in weights
-            this.wts = new HashMap<>();
-
-            try (BufferedReader br = new BufferedReader(new FileReader(new File("tropicsWts.csv")))) {
-                String line = br.readLine();
-                while (line != null) {
-                    String[] args = line.split(",");
-                    wts.put(FastMath.toRadians(Double.parseDouble(args[0])), Double.parseDouble(args[1]));
-                    line = br.readLine();
-                }
-            } catch (IOException ex) {
-                Logger.getLogger(ConstellationOptimizer.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
         } catch (OrekitException ex) {
             Logger.getLogger(ConstellationOptimizer.class.getName()).log(Level.SEVERE, null, ex);
             throw new IllegalStateException("Failed to create a new problem");
@@ -297,11 +271,6 @@ public class ConstellationOptimizer extends AbstractProblem {
         Properties properties = new Properties();
         properties.setProperty("threshold", "7200.0");
 
-        DescriptiveStatistics covMetric = new DescriptiveStatistics();
-        for (double lat : wts.keySet()) {
-            DescriptiveStatistics gapStat = gea.getStatistics(AnalysisMetric.DURATION_GEQ, false, new double[]{lat - 0.01, lat + 0.01}, new double[]{-FastMath.PI, FastMath.PI}, properties);
-            covMetric.addValue(gapStat.getMean() * wts.get(lat));
-        }
         DescriptiveStatistics respStats = gea.getStatistics(AnalysisMetric.MEAN_TIME_TO_T, false, properties);
         DescriptiveStatistics gapStats = gea.getStatistics(AnalysisMetric.DURATION, false, properties);
         solution.setObjective(0, respStats.getMean());
@@ -334,7 +303,7 @@ public class ConstellationOptimizer extends AbstractProblem {
      * @return
      */
     private DeploymentStrategy deploymentStrategy(Collection<SatelliteVariable> satellites) {
-        Collection< Collection<List<SatelliteVariable>>> feasibleDeployments = enumeratePartitions(satellites);
+        Collection<Collection<List<SatelliteVariable>>> feasibleDeployments = enumeratePartitions(satellites);
 
         ArrayList<Installment> minLaunchDeployment = new ArrayList<>();
         double minDV = Double.POSITIVE_INFINITY;

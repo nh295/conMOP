@@ -53,7 +53,7 @@ public class DistributePlanes implements Variation {
 
         ArrayList<SatelliteVariable> allSats = new ArrayList<>();
         ArrayList<Installment> installmentCandidates = new ArrayList();
-        for (Installment installment : deploymentStrategy.getDeploymentStrategy()) {
+        for (Installment installment : deploymentStrategy.getInstallments()) {
             installmentCandidates.add(installment);
             allSats.addAll(installment.getSatellites());
         }

@@ -56,7 +56,7 @@ public class IncreasePlanes implements Variation {
 
         //randomly select a installment to break up
         ArrayList<Installment> installmentCandidates = new ArrayList();
-        for (Installment installment : deploymentStrategy.getDeploymentStrategy()) {
+        for (Installment installment : deploymentStrategy.getInstallments()) {
             if (installment.getSatellites().size() > 1) {
                 installmentCandidates.add(installment);
             }
