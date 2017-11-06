@@ -184,8 +184,8 @@ public class ConstellationOptimizer extends AbstractProblem {
             Set<GeodeticPoint> poi, double halfAngle, Bounds<Integer> nSatBound, Bounds<Double> sma,
             Bounds<Double> inc, Properties properties) {
         this(name, startDate, endDate, propagatorFactory, poi, halfAngle, nSatBound,
-                sma, new Bounds(0.0, 0.0000000001), inc,
-                new Bounds(0.0, 2 * Math.PI), new Bounds(0.0, 0.0000000001), new Bounds(0.0, 2 * Math.PI), properties);
+                sma, new Bounds(0.0, 0.0), inc,
+                new Bounds(0.0, 2 * Math.PI), new Bounds(0.0, 0.0), new Bounds(0.0, 2 * Math.PI), properties);
     }
 
     public ConstellationOptimizer(String name, AbsoluteDate startDate, AbsoluteDate endDate,

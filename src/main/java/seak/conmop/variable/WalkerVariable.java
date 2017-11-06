@@ -174,7 +174,9 @@ public class WalkerVariable extends ConstellationVariable {
                 var.setInc(inc);
                 var.setArgPer(0.0);
                 var.setRaan(refRaan + planeNum * delRaan);
-                var.setTrueAnomaly(refAnom + satNum * delAnom + phasing * planeNum);
+                //ta must be between 0 and 2PI so use modulus
+                double ta = (refAnom + satNum * delAnom + phasing * planeNum) % (2.*FastMath.PI);
+                var.setTrueAnomaly(ta);
                 satelliteVariables.add(var);
             }
         }
@@ -210,6 +212,9 @@ public class WalkerVariable extends ConstellationVariable {
         }
         this.p = possibleP.get(PRNG.nextInt(possibleP.size()));
         this.f = PRNG.nextInt(p);
+        this.inc = PRNG.nextDouble(getIncBound().getLowerBound(), getIncBound().getUpperBound());
+        this.sma = PRNG.nextDouble(getSmaBound().getLowerBound(), getSmaBound().getUpperBound());
+        setWalker(this.sma, this.inc, this.t, this.p, this.f);
     }
 
 }

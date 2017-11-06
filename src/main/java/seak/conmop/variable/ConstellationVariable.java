@@ -74,8 +74,8 @@ public class ConstellationVariable implements Variable {
 
     /**
      * Creates a new variable for a satellite. Assumes all valid values are
-     * allowed for argument of perigee, right ascension of the ascending node,
-     * and true anomaly.
+     * allowed for right ascension of the ascending node 
+     * and true anomaly. Argument of perigee assumed to be 0.0
      *
      * @param satelliteBound The bounds on the number of satellites allowed in
      * this constellation
@@ -88,7 +88,7 @@ public class ConstellationVariable implements Variable {
             Bounds<Double> smaBound, Bounds<Double> eccBound,
             Bounds<Double> incBound) {
         this(satelliteBound, smaBound, eccBound, incBound,
-                new Bounds<>(0.0, 2. * Math.PI),
+                new Bounds<>(0.0, 0.0),
                 new Bounds<>(0.0, 2. * Math.PI),
                 new Bounds<>(0.0, 2. * Math.PI));
     }

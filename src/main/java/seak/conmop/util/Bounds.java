@@ -6,6 +6,7 @@
 package seak.conmop.util;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * An object to store the upper and lower bounds of an interval
@@ -49,5 +50,36 @@ public class Bounds<T extends Comparable<T>> implements Serializable{
             return true;
         }
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 61 * hash + Objects.hashCode(this.upperBound);
+        hash = 61 * hash + Objects.hashCode(this.lowerBound);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Bounds<?> other = (Bounds<?>) obj;
+        if (!Objects.equals(this.upperBound, other.upperBound)) {
+            return false;
+        }
+        if (!Objects.equals(this.lowerBound, other.lowerBound)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 
 }

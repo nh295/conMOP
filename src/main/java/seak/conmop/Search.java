@@ -61,6 +61,7 @@ import seak.conmop.launch.LaunchStage;
 import seak.conmop.launch.LaunchVehicle;
 import seak.conmop.operators.BinaryUniformCrossover;
 import seak.conmop.operators.OrbitElementOperator;
+import seak.conmop.operators.RandomWalkerInitialization;
 import seak.conmop.operators.RepairNumberOfSatellites;
 import seak.conmop.operators.StaticOrbitElementOperator;
 import seak.conmop.operators.StaticLengthOnePointCrossover;
@@ -145,7 +146,7 @@ public class Search {
         for (int i = 0; i < 30; i++) {
 
             long startTime = System.nanoTime();
-            Initialization initialization = new RandomInitialization(problem,
+            Initialization initialization = new RandomWalkerInitialization(problem,
                     populationSize);
 
             Population population = new Population();
@@ -166,10 +167,10 @@ public class Search {
             operators.add(new CompoundVariation(
                     new VariableLengthOnePointCrossover(1.0, true),
                     new RepairNumberOfSatellites()));
-            operators.add(new DecreasePlanes());
-            operators.add(new DistributeAnomaly());
-            operators.add(new DistributePlanes());
-            operators.add(new IncreasePlanes());
+//            operators.add(new DecreasePlanes());
+//            operators.add(new DistributeAnomaly());
+//            operators.add(new DistributePlanes());
+//            operators.add(new IncreasePlanes());
 //            operators.add(new CompoundVariation(
 //                    new StaticOrbitElementOperator(
 //                            new CompoundVariation(new SBX(1, 20),
