@@ -5,17 +5,20 @@
  */
 package seak.conmop;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
+import org.hipparchus.util.FastMath;
 import org.moeaframework.core.Solution;
 import org.moeaframework.problem.AbstractProblem;
 import org.moeaframework.util.Vector;
@@ -23,8 +26,10 @@ import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
 import org.orekit.errors.OrekitException;
+import org.orekit.estimation.measurements.GroundStation;
 import org.orekit.frames.Frame;
 import org.orekit.frames.FramesFactory;
+import org.orekit.frames.TopocentricFrame;
 import org.orekit.orbits.Orbit;
 import org.orekit.time.AbsoluteDate;
 import org.orekit.time.TimeScale;
@@ -37,15 +42,22 @@ import seak.conmop.deployment.Installment;
 import seak.conmop.launch.DeltaV;
 import seak.conmop.util.Bounds;
 import seak.conmop.variable.BooleanSatelliteVariable;
+import seak.conmop.variable.ConstellationMatrix;
 import seak.conmop.variable.ConstellationVariable;
 import seak.conmop.variable.SatelliteVariable;
+import seak.orekit.coverage.access.TimeIntervalArray;
 import seak.orekit.coverage.analysis.AnalysisMetric;
 import seak.orekit.coverage.analysis.FastCoverageAnalysis;
 import seak.orekit.coverage.analysis.GroundEventAnalyzer;
 import seak.orekit.event.EventAnalysis;
+import seak.orekit.event.GndStationEventAnalysis;
+import seak.orekit.object.CommunicationBand;
 import seak.orekit.object.Constellation;
 import seak.orekit.object.CoverageDefinition;
+import seak.orekit.object.GndStation;
 import seak.orekit.object.Satellite;
+import seak.orekit.object.communications.ReceiverAntenna;
+import seak.orekit.object.communications.TransmitterAntenna;
 import seak.orekit.propagation.PropagatorFactory;
 import seak.orekit.scenario.Scenario;
 import seak.orekit.util.Orbits;
@@ -157,10 +169,15 @@ public class ConstellationOptimizer extends AbstractProblem {
     private final double launchLatitude;
 
     /**
+     * The ground stations for downlink
+     */
+    private final Collection<GndStation> gndStations;
+
+    /**
      * a dummy constructor for analyzing hypervolumes after the optimization
      */
     public ConstellationOptimizer() {
-        this(null, null, null, null, null, 0.0, null, null, null, new Properties());
+        this(null, null, null, null, null, 0.0, null, null, null, null, new Properties());
     }
 
     /**
@@ -177,22 +194,24 @@ public class ConstellationOptimizer extends AbstractProblem {
      * @param nSatBound
      * @param sma
      * @param inc
+     * @param gndStations
      * @param properties
      */
     public ConstellationOptimizer(String name, AbsoluteDate startDate, AbsoluteDate endDate,
             PropagatorFactory propagatorFactory,
             Set<GeodeticPoint> poi, double halfAngle, Bounds<Integer> nSatBound, Bounds<Double> sma,
-            Bounds<Double> inc, Properties properties) {
+            Bounds<Double> inc, Collection<GndStation> gndStations, Properties properties) {
         this(name, startDate, endDate, propagatorFactory, poi, halfAngle, nSatBound,
                 sma, new Bounds(0.0, 0.0), inc,
-                new Bounds(0.0, 2 * Math.PI), new Bounds(0.0, 0.0), new Bounds(0.0, 2 * Math.PI), properties);
+                new Bounds(0.0, 2 * Math.PI), new Bounds(0.0, 0.0), new Bounds(0.0, 2 * Math.PI), gndStations, properties);
     }
 
     public ConstellationOptimizer(String name, AbsoluteDate startDate, AbsoluteDate endDate,
             PropagatorFactory propagatorFactory, Set<GeodeticPoint> poi, double halfAngle, Bounds<Integer> nSatBound,
             Bounds<Double> sma, Bounds<Double> ecc, Bounds<Double> inc,
-            Bounds<Double> raan, Bounds<Double> ap, Bounds<Double> ta, Properties properties) {
-        super(1, 3);
+            Bounds<Double> raan, Bounds<Double> ap, Bounds<Double> ta,
+            Collection<GndStation> gndStations, Properties properties) {
+        super(1, 4);
 
         try {
             this.startDate = startDate;
@@ -210,6 +229,7 @@ public class ConstellationOptimizer extends AbstractProblem {
             this.raanBound = raan;
             this.apBound = ap;
             this.taBound = ta;
+            this.gndStations = gndStations;
 
             this.raanTimeLimit = Double.parseDouble(properties.getProperty("raanTimeLimit", "604800"));
             this.tugDvLimit = Double.parseDouble(properties.getProperty("dvLimit", "2200"));
@@ -242,8 +262,14 @@ public class ConstellationOptimizer extends AbstractProblem {
                 }
             }
 
+            if (FastMath.abs(var.getInc() - 1.1074628348333333) < 0.05) {
+                var.setInc(1.109208162611111);
+            }
             Orbit orb = var.toOrbit(inertialFrame, startDate, earthMu);
-            satelliteList.add(new Satellite("sat", orb, null, new ArrayList()));
+            HashSet<CommunicationBand> comms = new HashSet<>();
+            comms.add(CommunicationBand.UHF);
+            satelliteList.add(new Satellite("sat", orb, null, new ArrayList(),
+                    new ReceiverAntenna(1, comms), new TransmitterAntenna(1, comms), 100, 100));
         }
 
         constellations.add(new Constellation("constel", satelliteList));
@@ -257,6 +283,15 @@ public class ConstellationOptimizer extends AbstractProblem {
         FastCoverageAnalysis fca = new FastCoverageAnalysis(startDate, endDate,
                 inertialFrame, cdefSet, halfAngle);
         eventanalyses.add(fca);
+
+        //declare ground access analysis
+        //assign each satellite to each ground station
+        Map<Satellite, Set<GndStation>> stationAssignment = new HashMap<>();
+        for (Satellite sat : satelliteList) {
+            stationAssignment.put(sat, new HashSet(gndStations));
+        }
+        GndStationEventAnalysis gndStaEA = new GndStationEventAnalysis(startDate, endDate, inertialFrame, stationAssignment, propagatorFactory);
+        eventanalyses.add(gndStaEA);
 
         Scenario scen = new Scenario("", startDate, endDate, timeScale,
                 inertialFrame, propagatorFactory, cdefSet, eventanalyses, new ArrayList<>(), properties);
@@ -286,6 +321,16 @@ public class ConstellationOptimizer extends AbstractProblem {
         DeploymentStrategy deployment = deploymentStrategy(constel.getSatelliteVariables());
         constel.setDeploymentStrategy(deployment);
         solution.setObjective(2, deployment.getTotalDV());
+
+        //check ground sataion gap for each satellite
+        double maxGndGap = Double.NEGATIVE_INFINITY;
+        for (Satellite sat : satelliteList) {
+            GroundEventAnalyzer gndStaAnalyzer = new GroundEventAnalyzer(gndStaEA.getEvents(sat));
+            DescriptiveStatistics gndGapStats = gndStaAnalyzer.getStatistics(AnalysisMetric.DURATION, false, properties);
+            maxGndGap = FastMath.max(maxGndGap, gndGapStats.getMax());
+        }
+
+        solution.setObjective(3, maxGndGap);
     }
 
     @Override
@@ -322,12 +367,11 @@ public class ConstellationOptimizer extends AbstractProblem {
                 double tugDV = ConstellationDeployment.deploymentDV(bestOrder);
 
                 //add the dv required to get to first satellite in deployment order
-                double launchDV = Vector.magnitude(
-                        DeltaV.launch(
+                double[][] v= DeltaV.launch( bestOrder.get(0).getInc(),
                                 launchLatitude,
                                 Orbits.circularOrbitVelocity(bestOrder.get(0).getSma()),
-                                bestOrder.get(0).getInc(),
-                                0.0));
+                                0.0);
+                double launchDV = FastMath.min(Vector.magnitude(v[0]),Vector.magnitude(v[1]));
 
                 bestDeployment.add(new Installment(bestOrder, launchDV, tugDV));
                 nSatAssinged += bestOrder.size();

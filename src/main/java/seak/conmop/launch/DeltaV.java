@@ -84,33 +84,47 @@ public class DeltaV {
      * @return the delta v required for a simple plane change
      */
     public static double combinedPlaneChange(double veli, double velf, double theta) {
-        return FastMath.sqrt(veli*veli
-                + velf*velf
+        return FastMath.sqrt(veli * veli
+                + velf * velf
                 - 2 * veli * velf * FastMath.cos(theta));
     }
 
     /**
      * Computes the velocity needed to accelerate a payload from rest at the
      * launch site to the required burnout velocity. Components in
-     * topocentric-horizon coordinates [Vs,Ve,Vz].
+     * topocentric-horizon coordinates [Vs,Ve,Vz]. Two vectors are returned for
+     * the two possible launch azimuths, which are corrected for the earth's
+     * rotation
      *
      * Equations are from 6-45a to 6-45c from SMAD ed. 3 (1999).
      *
+     * @param inclination the target inclination [rad]
      * @param latitude latitude [rad] of the launch site
      * @param velBO velocity [m/s] at burnout
-     * @param azimuthBO the launch azimuth [rad] at burnout
      * @param fltPathAngleBO the flight path angle [rad] at burnout
      * @return
      */
-    public static double[] launch(double latitude, double velBO, double azimuthBO, double fltPathAngleBO) {
+    public static double[][] launch(double inclination, double latitude, double velBO, double fltPathAngleBO) {
         double veq = 2 * FastMath.PI * Constants.WGS84_EARTH_EQUATORIAL_RADIUS / 86400;
         double vl = veq * FastMath.cos(latitude);
 
-        double vs = -velBO * FastMath.cos(fltPathAngleBO) * FastMath.cos(azimuthBO);
-        double ve = velBO * FastMath.cos(fltPathAngleBO) * FastMath.sin(azimuthBO) - vl;
-        double vz = velBO * FastMath.sin(fltPathAngleBO);
+        double inertialAzimuth = FastMath.asin(FastMath.cos(inclination) / FastMath.cos(latitude));
+        double correction = FastMath.atan(
+                (vl * FastMath.cos(inertialAzimuth))
+                / (velBO - veq * FastMath.cos(inclination)));
 
-        return new double[]{vs, ve, vz};
+        double[] azimuthBO = new double[]{inertialAzimuth + correction, inertialAzimuth - correction};
+
+        double[][] out = new double[2][3];
+        for (int i = 0; i < 2; i++) {
+            double vs = -velBO * FastMath.cos(fltPathAngleBO) * FastMath.cos(azimuthBO[i]);
+            double ve = velBO * FastMath.cos(fltPathAngleBO) * FastMath.sin(azimuthBO[i]) - vl;
+            double vz = velBO * FastMath.sin(fltPathAngleBO);
+            out[i][0] = vs;
+            out[i][1] = ve;
+            out[i][2] = vz;
+        }
+        return out;
     }
 
     /**
@@ -194,6 +208,6 @@ public class DeltaV {
      */
     public static double requiredPropellantMass(double deltaV, double mi, double isp) {
         double mf = mi / FastMath.exp(deltaV / (Constants.G0_STANDARD_GRAVITY * isp));
-        return mi-mf;
+        return mi - mf;
     }
 }

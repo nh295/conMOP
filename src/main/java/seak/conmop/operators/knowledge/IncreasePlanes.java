@@ -5,6 +5,7 @@
  */
 package seak.conmop.operators.knowledge;
 
+import aos.operator.CheckParents;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
@@ -19,12 +20,12 @@ import seak.conmop.variable.SatelliteVariable;
 
 /**
  * This operator tries to increase the number of planes in the constellation by
- * taking satellites that are in the same or near the same plane and
- * redistributing them so that they are no longer in the same plane.
+ * taking half of the satellites that are in the same or near the same plane and
+ * placing them in a new plane at the same inclination but different RAAN
  *
  * @author nozomihitomi
  */
-public class IncreasePlanes implements Variation {
+public class IncreasePlanes implements Variation, CheckParents {
 
     @Override
     public int getArity() {
@@ -62,31 +63,50 @@ public class IncreasePlanes implements Variation {
             }
             sats.addAll(installment.getSatellites());
         }
-        
-        if(installmentCandidates.isEmpty()){
+
+        if (installmentCandidates.isEmpty()) {
             return constelVariable;
         }
-        
+
         Collections.shuffle(installmentCandidates);
         Installment installmentCandidate = installmentCandidates.get(0);
 
         DescriptiveStatistics raans = new DescriptiveStatistics();
-        for(SatelliteVariable sat : installmentCandidate.getSatellites()){
+        for (SatelliteVariable sat : installmentCandidate.getSatellites()) {
             raans.addValue(sat.getRaan());
         }
         double meanRaan = raans.getMean();
-        
+
         //try to set a different raan by choosing a random raan that is +[90,270] deg different from the mean
-        double newRaan = FastMath.PI*PRNG.nextDouble()+FastMath.PI/2. + meanRaan;
-        if(newRaan > 2*FastMath.PI){
-            newRaan -= 2*FastMath.PI;
+        double newRaan = FastMath.PI * PRNG.nextDouble() + FastMath.PI / 2. + meanRaan;
+        if (newRaan > 2 * FastMath.PI) {
+            newRaan -= 2 * FastMath.PI;
         }
         ArrayList<SatelliteVariable> satCandidates = new ArrayList<>(installmentCandidate.getSatellites());
         Collections.shuffle(satCandidates);
-        satCandidates.get(0).setRaan(newRaan);
+        //put half of the satellites in the chosen plane into new plane at new raan
+        for(int i=0; i< Math.floorDiv(satCandidates.size(),2); i++){
+            satCandidates.get(i).setRaan(newRaan);
+        }
 
         constelVariable.setSatelliteVariables(sats);
         return constelVariable;
     }
 
+    @Override
+    public boolean check(Solution[] parents) {
+        for (Solution parent : parents) {
+            for (int i = 0; i < parent.getNumberOfVariables(); i++) {
+                if (parent.getVariable(i) instanceof ConstellationVariable) {
+                    ConstellationVariable constelVariable
+                            = (ConstellationVariable) parent.getVariable(i);
+                    if (constelVariable.getDeploymentStrategy().getInstallments().size()
+                            < constelVariable.getSatelliteBound().getUpperBound()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }

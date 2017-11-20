@@ -5,6 +5,7 @@
  */
 package seak.conmop.operators.knowledge;
 
+import aos.operator.CheckParents;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.util.FastMath;
@@ -24,7 +25,7 @@ import seak.conmop.variable.SatelliteVariable;
  *
  * @author nozomihitomi
  */
-public class DistributeAnomaly implements Variation {
+public class DistributeAnomaly implements Variation, CheckParents {
 
     @Override
     public int getArity() {
@@ -63,8 +64,8 @@ public class DistributeAnomaly implements Variation {
             }
             allSats.addAll(installment.getSatellites());
         }
-        
-        if(installmentCandidates.isEmpty()){
+
+        if (installmentCandidates.isEmpty()) {
             return constelVariable;
         }
 
@@ -80,21 +81,39 @@ public class DistributeAnomaly implements Variation {
         SatelliteVariable anchor = sats.get(n);
         for (int i = 0; i < n; i++) {
             double newAnomaly = anchor.getTrueAnomaly() - separation * (n - i);
-            if(newAnomaly < 0){
-                newAnomaly += 2.*FastMath.PI;
+            if (newAnomaly < 0) {
+                newAnomaly += 2. * FastMath.PI;
             }
             sats.get(i).setTrueAnomaly(newAnomaly);
         }
         for (int i = n + 1; i < sats.size(); i++) {
             double newAnomaly = anchor.getTrueAnomaly() + separation * (i - n);
-            if(newAnomaly > 2.*FastMath.PI){
-                newAnomaly -= 2.*FastMath.PI;
+            if (newAnomaly > 2. * FastMath.PI) {
+                newAnomaly -= 2. * FastMath.PI;
             }
             sats.get(i).setTrueAnomaly(newAnomaly);
         }
 
         constelVariable.setSatelliteVariables(allSats);
         return constelVariable;
+    }
+
+    @Override
+    public boolean check(Solution[] parents) {
+        for (Solution parent : parents) {
+            for (int i = 0; i < parent.getNumberOfVariables(); i++) {
+                if (parent.getVariable(i) instanceof ConstellationVariable) {
+                    ConstellationVariable constelVariable
+                            = (ConstellationVariable) parent.getVariable(i);
+                    for (Installment installment : constelVariable.getDeploymentStrategy().getInstallments()) {
+                        if (installment.getSatellites().size() > 1) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }

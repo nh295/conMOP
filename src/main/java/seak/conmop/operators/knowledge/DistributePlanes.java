@@ -5,6 +5,7 @@
  */
 package seak.conmop.operators.knowledge;
 
+import aos.operator.CheckParents;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -24,7 +25,7 @@ import seak.conmop.variable.SatelliteVariable;
  *
  * @author nozomihitomi
  */
-public class DistributePlanes implements Variation {
+public class DistributePlanes implements Variation, CheckParents {
 
     @Override
     public int getArity() {
@@ -111,5 +112,22 @@ public class DistributePlanes implements Variation {
         }
 
     }
+    
+    @Override
+    public boolean check(Solution[] parents) {
+        for (Solution parent : parents) {
+            for (int i = 0; i < parent.getNumberOfVariables(); i++) {
+                if (parent.getVariable(i) instanceof ConstellationVariable) {
+                    ConstellationVariable constelVariable
+                            = (ConstellationVariable) parent.getVariable(i);
+                     if (constelVariable.getDeploymentStrategy().getInstallments().size() > 1) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
 }

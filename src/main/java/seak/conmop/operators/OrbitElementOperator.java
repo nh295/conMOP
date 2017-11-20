@@ -252,33 +252,31 @@ public class OrbitElementOperator implements Variation {
         Solution[] parents = new Solution[satellites.length];
         for (int i = 0; i < satellites.length; i++) {
             Solution parent = new Solution(variableLocus.size(), 0);
-            int satCount = 0;
             SatelliteVariable sat = satellites[i];
             if (variableLocus.containsKey("sma")) {
-                parent.setVariable(satCount + variableLocus.get("sma"),
+                parent.setVariable(variableLocus.get("sma"),
                         new RealVariable(sat.getSma(), sat.getSmaBound().getLowerBound(), sat.getSmaBound().getUpperBound()));
             }
             if (variableLocus.containsKey("ecc")) {
-                parent.setVariable(satCount + variableLocus.get("ecc"),
+                parent.setVariable(variableLocus.get("ecc"),
                         new RealVariable(sat.getEcc(), sat.getEccBound().getLowerBound(), sat.getEccBound().getUpperBound()));
             }
             if (variableLocus.containsKey("inc")) {
-                parent.setVariable(satCount + variableLocus.get("inc"),
+                parent.setVariable(variableLocus.get("inc"),
                         new RealVariable(sat.getInc(), sat.getIncBound().getLowerBound(), sat.getIncBound().getUpperBound()));
             }
             if (variableLocus.containsKey("ap")) {
-                parent.setVariable(satCount + variableLocus.get("ap"),
+                parent.setVariable(variableLocus.get("ap"),
                         new RealVariable(sat.getArgPer(), sat.getArgPerBound().getLowerBound(), sat.getArgPerBound().getUpperBound()));
             }
             if (variableLocus.containsKey("raan")) {
-                parent.setVariable(satCount + variableLocus.get("raan"),
+                parent.setVariable(variableLocus.get("raan"),
                         new RealVariable(sat.getRaan(), sat.getRaanBound().getLowerBound(), sat.getRaanBound().getUpperBound()));
             }
             if (variableLocus.containsKey("ta")) {
-                parent.setVariable(satCount + variableLocus.get("ta"),
+                parent.setVariable(variableLocus.get("ta"),
                         new RealVariable(sat.getTrueAnomaly(), sat.getAnomBound().getLowerBound(), sat.getAnomBound().getUpperBound()));
             }
-            satCount += variableLocus.size();
             parents[i] = parent;
         }
 
@@ -288,28 +286,26 @@ public class OrbitElementOperator implements Variation {
         for (int i = 0; i < satellites.length; i++) {
             Solution child = offspring[i];
             SatelliteVariable satVar = satellites[i];
-            int satCount = 0;
             if (variableLocus.containsKey("sma")) {
-                satVar.setSma(((RealVariable) child.getVariable(satCount + variableLocus.get("sma"))).getValue());
+                satVar.setSma(((RealVariable) child.getVariable(variableLocus.get("sma"))).getValue());
             }
             if (variableLocus.containsKey("ecc")) {
-                satVar.setEcc(((RealVariable) child.getVariable(satCount + variableLocus.get("ecc"))).getValue());
+                satVar.setEcc(((RealVariable) child.getVariable(variableLocus.get("ecc"))).getValue());
             }
             if (variableLocus.containsKey("inc")) {
-                satVar.setInc(((RealVariable) child.getVariable(satCount + variableLocus.get("inc"))).getValue());
+                satVar.setInc(((RealVariable) child.getVariable(variableLocus.get("inc"))).getValue());
             }
             if (variableLocus.containsKey("ap")) {
-                satVar.setArgPer(((RealVariable) child.getVariable(satCount + variableLocus.get("ap"))).getValue());
+                satVar.setArgPer(((RealVariable) child.getVariable(variableLocus.get("ap"))).getValue());
             }
             if (variableLocus.containsKey("raan")) {
-                satVar.setRaan(((RealVariable) child.getVariable(satCount + variableLocus.get("raan"))).getValue());
+                satVar.setRaan(((RealVariable) child.getVariable(variableLocus.get("raan"))).getValue());
             }
             if (variableLocus.containsKey("ta")) {
-                satVar.setTrueAnomaly(((RealVariable) child.getVariable(satCount + variableLocus.get("ta"))).getValue());
+                satVar.setTrueAnomaly(((RealVariable) child.getVariable(variableLocus.get("ta"))).getValue());
             }
 
             out[i] = satVar;
-            satCount += variableLocus.size();
         }
         return out;
     }

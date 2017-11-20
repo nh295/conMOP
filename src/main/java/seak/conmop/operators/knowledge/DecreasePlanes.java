@@ -5,6 +5,7 @@
  */
 package seak.conmop.operators.knowledge;
 
+import aos.operator.CheckParents;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
@@ -22,7 +23,7 @@ import seak.conmop.variable.SatelliteVariable;
  *
  * @author nozomihitomi
  */
-public class DecreasePlanes implements Variation {
+public class DecreasePlanes implements Variation, CheckParents {
 
     @Override
     public int getArity() {
@@ -48,11 +49,11 @@ public class DecreasePlanes implements Variation {
      * @return The modified instance of a constellation variable
      */
     private ConstellationVariable evolve(ConstellationVariable constelVariable) {
-        if(constelVariable.getNumberOfSatellites() <= 1 ||
-                constelVariable.getDeploymentStrategy().getInstallments().size() <= 1){
+        if (constelVariable.getNumberOfSatellites() <= 1
+                || constelVariable.getDeploymentStrategy().getInstallments().size() <= 1) {
             return constelVariable;
         }
-        
+
         DeploymentStrategy deploymentStrategy = constelVariable.getDeploymentStrategy();
 
         //Select an installment to move
@@ -84,6 +85,23 @@ public class DecreasePlanes implements Variation {
         }
         constelVariable.setSatelliteVariables(sats);
         return constelVariable;
+    }
+
+    @Override
+    public boolean check(Solution[] parents) {
+        for (Solution parent : parents) {
+            for (int i = 0; i < parent.getNumberOfVariables(); i++) {
+                if (parent.getVariable(i) instanceof ConstellationVariable) {
+                    ConstellationVariable constelVariable
+                            = (ConstellationVariable) parent.getVariable(i);
+                    if (constelVariable.getDeploymentStrategy().getInstallments().size() > 1
+                            && constelVariable.getDeploymentStrategy().getInstallments().size() >= constelVariable.getSatelliteBound().getLowerBound()) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 }
