@@ -122,7 +122,7 @@ public class Search {
 
         Properties problemProperty = new Properties();
 
-        Bounds<Integer> tBounds = new Bounds(1, 10);
+        Bounds<Integer> tBounds = new Bounds(5, 10);
         Bounds<Double> smaBounds = new Bounds(a + 400000, a + 1000000);
         Bounds<Double> incBounds = new Bounds(20. * DEG_TO_RAD, 100. * DEG_TO_RAD);
 
@@ -138,7 +138,7 @@ public class Search {
         for (CoveragePoint pt : cdef.getPoints()) {
             points.add(pt.getPoint());
         }
-        
+
         //define ground stations
         ArrayList<GndStation> gndStations = new ArrayList<>();
         TopocentricFrame wallopsTopo = new TopocentricFrame(earthShape, new GeodeticPoint(FastMath.toRadians(37.94019444), FastMath.toRadians(-75.46638889), 0.), "Wallops");
@@ -178,13 +178,9 @@ public class Search {
             //set up variations
             //example of operators you might use
             ArrayList<Variation> operators = new ArrayList();
-            operators.add(new CompoundVariation(
-                    new OrbitElementOperator(
-                            new CompoundVariation(new SBX(1, 20), new VariablePM(20))),
-                    new RepairNumberOfSatellites()));
-            operators.add(new CompoundVariation(
-                    new VariableLengthOnePointCrossover(1.0, true),
-                    new RepairNumberOfSatellites()));
+            operators.add(new OrbitElementOperator(
+                    new CompoundVariation(new SBX(1, 20), new VariablePM(20))));
+            operators.add(new VariableLengthOnePointCrossover(1.0, tBounds));
             operators.add(new DecreasePlanes());
             operators.add(new DistributeAnomaly());
             operators.add(new DistributePlanes());
@@ -229,10 +225,8 @@ public class Search {
             try {
                 PopulationIO.write(new File(mode + i + "_all.pop"), aos.getAllSolutions());
                 PopulationIO.write(new File(mode + i + ".pop"), aos.getPopulation());
-                PopulationIO.write(new File(mode + i + "_archive.pop"), aos.getArchive());
                 PopulationIO.writeObjectives(new File(mode + i + "_all.obj"), aos.getAllSolutions());
                 PopulationIO.writeObjectives(new File(mode + i + ".obj"), aos.getPopulation());
-                PopulationIO.writeObjectives(new File(mode + i + "_archive.obj"), aos.getPopulation());
             } catch (IOException ex) {
                 Logger.getLogger(Search.class.getName()).log(Level.SEVERE, null, ex);
             }

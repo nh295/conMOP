@@ -261,7 +261,7 @@ public class ConstellationOptimizer extends AbstractProblem {
                     continue;
                 }
             }
-
+            //avoid critically inclined orbit which causes propagation issues
             if (FastMath.abs(var.getInc() - 1.1074628348333333) < 0.05) {
                 var.setInc(1.109208162611111);
             }
