@@ -4,15 +4,15 @@ function [NFE, HV, IGD] = computeMetrics(root,filepath)
 %computed based on the reference population. Step determines how often to
 %compute these metrics
 
-refPopPath = strcat(root, filesep, 'results', filesep, 'refpop', filesep, 'refPop.pop');
+refPopPath = strcat(root, filesep, 'results_kd4', filesep, 'refpop', filesep, 'refpop.pop');
 maxNFE = 5000;
 step = 5;
-epsilonDouble = [10, 1, 1000];
+epsilonDouble = [30, 1, 100, 30];
 h = waitbar(0, 'Processing populations...');
 try
     conMOP_init(root);
     origin = cd(filepath);
-    files = dir('*.pop');
+    files = dir('*all.pop');
     NFE = zeros(maxNFE/step,length(files));
     HV = zeros(maxNFE/step,length(files));
     IGD = zeros(maxNFE/step,length(files));
@@ -20,7 +20,7 @@ try
     refPop = org.moeaframework.core.PopulationIO.read(java.io.File(refPopPath));
     refPop = org.moeaframework.core.NondominatedPopulation(refPop);
     
-    refObj = dlmread(strcat(root, filesep, 'results', filesep, 'refpop', filesep, 'refPop.obj'));
+    refObj = dlmread(strcat(root, filesep, 'results_kd4', filesep, 'refpop', filesep, 'refpop.obj'));
     
     %initialize problem
     prob = seak.conmop.ConstellationOptimizer();

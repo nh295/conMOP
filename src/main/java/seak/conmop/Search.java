@@ -122,7 +122,7 @@ public class Search {
 
         Properties problemProperty = new Properties();
 
-        Bounds<Integer> tBounds = new Bounds(5, 10);
+        Bounds<Integer> tBounds = new Bounds(5, 15);
         Bounds<Double> smaBounds = new Bounds(a + 400000, a + 1000000);
         Bounds<Double> incBounds = new Bounds(20. * DEG_TO_RAD, 100. * DEG_TO_RAD);
 

@@ -5,8 +5,7 @@ function [ops, credits] = readAndPlotOneCreditFile()
 %operator
 
 
-path = '/Users/nozomihitomi/Dropbox/conMOP/results/';
-respath = strcat(path,'static');
+respath = '/Users/nozomihitomi/Dropbox/conMOP/';
 origin = cd(respath);
 
 files = dir('*.credit');
@@ -53,7 +52,7 @@ numOps = length(ops);
 %plot
 nepochs = 100;
 
-maxEval = 10000;
+maxEval = 5000;
 epochLength = maxEval/nepochs;
 all_epoch_credit = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch credits from the operators
 all_epoch_select = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch selection count for the operators
@@ -104,7 +103,7 @@ for i=1:numOps
     mean_cred = mean(squeeze(all_epoch_credit(i,:,:)),2);
     Y = [mean_cred-stddev;flipud(mean_cred+stddev)];
     Y(Y<0) = 0; %correct for negative values
-    %     fill(X,Y,colors{i},'EdgeColor','none');
+        fill(X,Y,colors{i},'EdgeColor','none');
     alpha(0.15)
     hold on
     handles = [handles plot(1:nepochs,mean_cred,'Color',colors{i}, 'LineWidth',2)];
@@ -139,7 +138,7 @@ for i=1:numOps
     hold on
     handles = [handles, plot(2:nepochs,mean_sel(2:end),'Color',colors{i}, 'LineWidth',2)];
 end
-plot([0,5000],[0.1,0.1],'--k')
+plot([0,5000],[0.03,0.03],'--k')
 legend(handles, ops);
 axis([0, nepochs, 0, 1])
 xlabel('NFE')

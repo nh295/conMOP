@@ -1,12 +1,11 @@
 %analyze data from orekit conMop run
 
 %set up parameters
-maxSat = 4;
-nobj = 3;
+maxSat = 10;
 kclusters = 10;
 
 %load population
-file = java.io.File('results/variable/variable_0.pop');
+file = java.io.File('variable_test0_all.pop');
 
 conMOP_init(cd)
 pop = org.moeaframework.core.PopulationIO.read(file);
@@ -14,6 +13,9 @@ ndpop = org.moeaframework.core.NondominatedPopulation(pop);
 
 %collect orbital elements of each satellite in each constellation
 oe = cell(pop.size(),1);
+ninstallments = zeros(pop.size(),1);
+stdinc = zeros(pop.size(),1);
+uniqueRAAN = zeros(pop.size(),1);
 for i = 0 : pop.size-1
     sats = pop.get(i).getVariable(0).getSatelliteVariables();
     m = zeros(sats.size,6);
@@ -26,20 +28,29 @@ for i = 0 : pop.size-1
         m(j+1,6) = sats.get(j).getTrueAnomaly;
     end
     oe{i+1} = m;
+    stdinc(i+1) = std(m(:,3));
+    uniqueRAAN(i+1) = length(unique(m(:,4)));
+%     ninstallments(i+1) = pop.get(i).getVariable(0).getDeploymentStrategy.getInstallments.size();
 end
 
 nsolns = pop.size;
 
+nobj = pop.get(0).getNumberOfObjectives;
+
 nsats = zeros(nsolns,1);
-popObj = zeros(nsolns,3);
+popObj = zeros(nsolns,nobj);
+nfe = zeros(nsolns,1)-1;
 for i=1:nsolns
     nsats(i) = size(oe{i},1);
+    nfe(i) = pop.get(i-1).getAttribute("NFE");
     popObj(i,:) = pop.get(i-1).getObjectives;
 end
 
 ndObj = zeros(ndpop.size,nobj);
+ndNfe = zeros(ndpop.size,1);
 for i=1:ndpop.size
     ndObj(i,:) = ndpop.get(i-1).getObjectives;
+    ndNfe(i) = ndpop.get(i-1).getAttribute("NFE");
 end
 quality = false(nsolns,1);
 
@@ -59,7 +70,7 @@ end
 %put all orbital elements into one big matrix
 allSats = zeros(nsolns*maxSat,8);
 sat_i = 1;
-for i=1:2257
+for i=1:length(oe)
     m = oe{i};
     for j=1:size(m,1)
         allSats(sat_i,:) = [m(j,:),i,quality(i)];

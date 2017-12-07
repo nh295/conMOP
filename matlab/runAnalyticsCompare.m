@@ -1,19 +1,27 @@
 %runs the post-run analysis
 %reads .res file and puts all results data into one mfile
 
-path = '/Users/nozomihitomi/Dropbox/conMOP/results/metrics/';
-load(strcat(path,'static.mat'));
+path = '/Users/nozomihitomi/Dropbox/conMOP/results_kd4/metrics/';
+load(strcat(path,'ki.mat'));
 
-nexperiments = 2;
-ntrials = 30;
+nexperiments = 3;
+ntrials = 8;
 hv = zeros(nexperiments,size(HV,1),ntrials);
 igd = zeros(nexperiments,size(IGD,1),ntrials);
 hv(1,:,:) = HV(:,1:ntrials);
 igd(1,:,:) = IGD(:,1:ntrials);
 
-load(strcat(path,'variable.mat'));
+load(strcat(path,'kd.mat'));
 hv(2,:,:) = HV(:,1:ntrials);
 igd(2,:,:) = IGD(:,1:ntrials);
+
+load(strcat(path,'ki_walker.mat'));
+hv(3,:,:) = HV(:,1:ntrials);
+igd(3,:,:) = IGD(:,1:ntrials);
+% 
+% load(strcat(path,'kd_walker.mat'));
+% hv(4,:,:) = HV(:,1:ntrials);
+% igd(4,:,:) = IGD(:,1:ntrials);
 
 dataPoints = size(HV,1);
 base_experiment_metric_sigHV = zeros(dataPoints,nexperiments-1);
@@ -86,7 +94,7 @@ axis([0,10000,0,1.2])
 hold off
 xlabel('NFE')
 ylabel('HV')
-legend(handles, 'Fixed-length chromosome', 'Variable-length chromosome','Location','SouthEast')
+legend(handles, 'KI', 'KD', 'KI_walker', 'KD_walker' ,'Location','SouthEast')
 % legend(handles, 'baseline','100','250','500','1000', 'Location', 'SouthEast')
 set(gca,'FontSize',16);
 

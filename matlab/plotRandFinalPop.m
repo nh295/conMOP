@@ -3,13 +3,13 @@
 
 n_representatives = 2;
 path = '/Users/nozomihitomi/Dropbox/conMOP/results/';
-method1 = 'static/';
-method2 = 'variable/';
+method1 = 'static_retest/';
+method2 = 'variable_retest/';
 
-files1 = dir(strcat(path,method1,'*.obj'));
+files1 = dir(strcat(path,method1,'*all.obj'));
 ind1 = randi(length(files1),n_representatives);
 
-files2 = dir(strcat(path,method2,'*.obj'));
+files2 = dir(strcat(path,method2,'*all.obj'));
 ind2 = randi(length(files2),n_representatives);
 
 %load refPop to show Pareto front
@@ -40,9 +40,9 @@ for i=1:n_representatives
     xlabel('Average revisit time [min]')
     ylabel('Number of satellites')
     zlabel('Average semi-major axis [km]')
-    xlim([0,1500])
-    ylim([0,20])
-    zlim([6600,7400])
+%     xlim([0,1500])
+%     ylim([0,20])
+%     zlim([6600,7400])
     set(gca,'FontSize',16);
 end
 

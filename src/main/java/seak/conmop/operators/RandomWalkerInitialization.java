@@ -70,8 +70,8 @@ public class RandomWalkerInitialization extends RandomInitialization {
                         walker = new WalkerVariable(
                                 constel.getSmaBound(), constel.getIncBound(),
                                 constel.getSatelliteBound(),
-                                constel.getSatelliteBound(),
-                                constel.getSatelliteBound());
+                                new Bounds(1, constel.getSatelliteBound().getUpperBound()),
+                                new Bounds(0, constel.getSatelliteBound().getUpperBound() - 1));
                     } else {
                         walker = new WalkerVariable(
                                 constel.getSmaBound(), constel.getIncBound(),

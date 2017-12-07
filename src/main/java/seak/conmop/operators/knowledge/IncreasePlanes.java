@@ -5,14 +5,13 @@
  */
 package seak.conmop.operators.knowledge;
 
-import aos.operator.CheckParents;
+import aos.operator.AbstractCheckParent;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
 import org.hipparchus.util.FastMath;
 import org.moeaframework.core.PRNG;
 import org.moeaframework.core.Solution;
-import org.moeaframework.core.Variation;
 import seak.conmop.deployment.DeploymentStrategy;
 import seak.conmop.deployment.Installment;
 import seak.conmop.variable.ConstellationVariable;
@@ -25,7 +24,7 @@ import seak.conmop.variable.SatelliteVariable;
  *
  * @author nozomihitomi
  */
-public class IncreasePlanes implements Variation, CheckParents {
+public class IncreasePlanes extends AbstractCheckParent  {
 
     @Override
     public int getArity() {
@@ -33,7 +32,7 @@ public class IncreasePlanes implements Variation, CheckParents {
     }
 
     @Override
-    public Solution[] evolve(Solution[] parents) {
+    public Solution[] evolveParents(Solution[] parents) {
         Solution child = parents[0].copy();
         for (int i = 0; i < child.getNumberOfVariables(); i++) {
             if (child.getVariable(i) instanceof ConstellationVariable) {

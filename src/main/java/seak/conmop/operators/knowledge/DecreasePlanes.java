@@ -5,12 +5,11 @@
  */
 package seak.conmop.operators.knowledge;
 
-import aos.operator.CheckParents;
+import aos.operator.AbstractCheckParent;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.hipparchus.stat.descriptive.DescriptiveStatistics;
 import org.moeaframework.core.Solution;
-import org.moeaframework.core.Variation;
 import seak.conmop.deployment.DeploymentStrategy;
 import seak.conmop.deployment.Installment;
 import seak.conmop.variable.ConstellationVariable;
@@ -23,7 +22,7 @@ import seak.conmop.variable.SatelliteVariable;
  *
  * @author nozomihitomi
  */
-public class DecreasePlanes implements Variation, CheckParents {
+public class DecreasePlanes extends AbstractCheckParent {
 
     @Override
     public int getArity() {
@@ -31,7 +30,7 @@ public class DecreasePlanes implements Variation, CheckParents {
     }
 
     @Override
-    public Solution[] evolve(Solution[] parents) {
+    public Solution[] evolveParents(Solution[] parents) {
         Solution child = parents[0].copy();
         for (int i = 0; i < child.getNumberOfVariables(); i++) {
             if (child.getVariable(i) instanceof ConstellationVariable) {
@@ -94,8 +93,7 @@ public class DecreasePlanes implements Variation, CheckParents {
                 if (parent.getVariable(i) instanceof ConstellationVariable) {
                     ConstellationVariable constelVariable
                             = (ConstellationVariable) parent.getVariable(i);
-                    if (constelVariable.getDeploymentStrategy().getInstallments().size() > 1
-                            && constelVariable.getDeploymentStrategy().getInstallments().size() >= constelVariable.getSatelliteBound().getLowerBound()) {
+                    if (constelVariable.getDeploymentStrategy().getInstallments().size() > 1) {
                         return true;
                     }
                 }
