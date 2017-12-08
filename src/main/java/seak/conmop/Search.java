@@ -155,8 +155,8 @@ public class Search {
                 tBounds, smaBounds, incBounds, gndStations, problemProperty);
         
         //set up the search parameters
-        int populationSize = 100;
-        int maxNFE = 5000;
+        int populationSize = 200;
+        int maxNFE = 10000;
 //        String mode = "static_";
 //        String mode = "variable_extra";
         String mode = "kd";

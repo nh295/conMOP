@@ -342,17 +342,74 @@ public class ConstellationOptimizer extends AbstractProblem {
     }
 
     /**
-     * Computes the delta v required to deploy the entire constellation
+     * Computes the delta v required to deploy the entire constellation by
+     * checking to see if there are large groups that can be launched together
      *
      * @param satellites
      * @return
      */
     private DeploymentStrategy deploymentStrategy(Collection<SatelliteVariable> satellites) {
-        Collection<Collection<List<SatelliteVariable>>> feasibleDeployments = enumeratePartitions(satellites);
+        //check inclinations and raan first
+        Map<Double, Map<Double, List<SatelliteVariable>>> map = new HashMap();
+        for (SatelliteVariable sat : satellites) {
+            if (!map.containsKey(sat.getInc())) {
+                map.put(sat.getInc(), new HashMap<>());
+            }
+            if (!map.get(sat.getInc()).containsKey(sat.getRaan())) {
+                map.get(sat.getInc()).put(sat.getRaan(), new ArrayList<>());
+            }
+            map.get(sat.getInc()).get(sat.getRaan()).add(sat);
+        }
+        
+        Collection<SatelliteVariable> unassignedSats = new ArrayList<>();
 
+        //check for large groups
+        Collection<Collection<SatelliteVariable>> largeGroups = new ArrayList();
+        for (Double inc : map.keySet()) {
+            for (Double raan : map.get(inc).keySet()) {
+                if (map.get(inc).get(raan).size() > 5) {
+                    largeGroups.add(map.get(inc).get(raan));
+                }else{
+                    unassignedSats.addAll(map.get(inc).get(raan));
+                }
+            }
+        }
+
+        //Check if the groups can be launched together
+        Collection<List<SatelliteVariable>> feasibleLargeDeployments = new ArrayList();
+        for (Collection<SatelliteVariable> satGroup : largeGroups) {
+            List<SatelliteVariable> satList = new ArrayList(satGroup);
+            boolean meetsConstraints = true;
+            for (int i = 1; i < satList.size(); i++) {
+                //check RAAN constraint with newly added satellite
+                if (!ConstellationDeployment.raanCompatitble(satList.get(i - 1), satList.get(i), raanTimeLimit)) {
+                    meetsConstraints = false;
+                    break;
+                }
+            }
+            if (ConstellationDeployment.deltaVCompatible(satGroup, tugDvLimit).isEmpty()) {
+                meetsConstraints = false;
+            }
+            if(meetsConstraints){
+                feasibleLargeDeployments.add(satList);
+            }else{
+                unassignedSats.addAll(satGroup);
+            }
+        }
+        
+        //find assignments for the other satellites
+        Collection<Collection<List<SatelliteVariable>>> feasibleDeployments = new ArrayList();
+        if(unassignedSats.isEmpty()){
+            feasibleDeployments.add(new ArrayList());
+        }else{
+            feasibleDeployments = enumeratePartitions(unassignedSats);
+        }
         ArrayList<Installment> minLaunchDeployment = new ArrayList<>();
         double minDV = Double.POSITIVE_INFINITY;
         for (Collection<List<SatelliteVariable>> deployment : feasibleDeployments) {
+            //add the large groups
+            deployment.addAll(feasibleLargeDeployments);
+            
             ArrayList<Installment> bestDeployment = new ArrayList<>();
             double dv = 0.0;
             int nSatAssinged = 0;
@@ -367,11 +424,11 @@ public class ConstellationOptimizer extends AbstractProblem {
                 double tugDV = ConstellationDeployment.deploymentDV(bestOrder);
 
                 //add the dv required to get to first satellite in deployment order
-                double[][] v= DeltaV.launch( bestOrder.get(0).getInc(),
-                                launchLatitude,
-                                Orbits.circularOrbitVelocity(bestOrder.get(0).getSma()),
-                                0.0);
-                double launchDV = FastMath.min(Vector.magnitude(v[0]),Vector.magnitude(v[1]));
+                double[][] v = DeltaV.launch(bestOrder.get(0).getInc(),
+                        launchLatitude,
+                        Orbits.circularOrbitVelocity(bestOrder.get(0).getSma()),
+                        0.0);
+                double launchDV = FastMath.min(Vector.magnitude(v[0]), Vector.magnitude(v[1]));
 
                 bestDeployment.add(new Installment(bestOrder, launchDV, tugDV));
                 nSatAssinged += bestOrder.size();

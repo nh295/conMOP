@@ -66,6 +66,20 @@ public class ConstellationDeployment {
                 return new ArrayList();
             }
         }
+        
+        //if all satellites have same inclination and raan, just order by altitude
+        boolean samePlane = true;
+        for(int i=1; i<satIncList.size(); i++){
+            if(!satIncList.get(i).getInc().equals(satIncList.get(0).getInc())
+                    || !satIncList.get(i).getRaan().equals(satIncList.get(0).getRaan())){
+                samePlane = false;
+                break;
+            }
+        }
+        if(samePlane){
+            Collections.sort(satIncList, new SatelliteComparator(OrbitalElementEnum.SMA));
+            return satIncList;
+        }
 
         double minDV = Double.POSITIVE_INFINITY;
         ArrayList<SatelliteVariable> minDVOrder = new ArrayList<>();
