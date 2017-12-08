@@ -153,7 +153,7 @@ public class Search {
         Problem problem = new ConstellationOptimizer("", startDate, endDate, pf,
                 points, FastMath.toRadians(51.),
                 tBounds, smaBounds, incBounds, gndStations, problemProperty);
-
+        
         //set up the search parameters
         int populationSize = 100;
         int maxNFE = 5000;

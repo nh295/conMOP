@@ -5,7 +5,7 @@ function [ops, credits] = readAndPlotOneCreditFile()
 %operator
 
 
-respath = '/Users/nozomihitomi/Dropbox/conMOP/';
+respath = '/Users/nozomihitomi/Dropbox/conMOP/results_kd4/kd_walker2';
 origin = cd(respath);
 
 files = dir('*.credit');
@@ -52,7 +52,7 @@ numOps = length(ops);
 %plot
 nepochs = 100;
 
-maxEval = 5000;
+maxEval = 10000;
 epochLength = maxEval/nepochs;
 all_epoch_credit = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch credits from the operators
 all_epoch_select = zeros(expData.keySet.size, nepochs, length(files)); %keeps track of the epoch selection count for the operators
@@ -133,7 +133,7 @@ for i=1:numOps
     mean_sel(isnan(mean_sel)) = 0;
     Y = [mean_sel'-stddev;flipud(mean_sel'+stddev)];
     Y(Y<0) = 0; %correct for negative values
-    fill(X,Y,colors{i},'EdgeColor','none');
+%     fill(X,Y,colors{i},'EdgeColor','none');
     alpha(0.15)
     hold on
     handles = [handles, plot(2:nepochs,mean_sel(2:end),'Color',colors{i}, 'LineWidth',2)];

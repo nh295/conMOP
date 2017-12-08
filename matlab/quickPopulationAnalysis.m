@@ -5,7 +5,7 @@ maxSat = 10;
 kclusters = 10;
 
 %load population
-file = java.io.File('variable_test0_all.pop');
+file = java.io.File('results_kd4/kd/kd0_all.pop');
 
 conMOP_init(cd)
 pop = org.moeaframework.core.PopulationIO.read(file);
@@ -15,6 +15,8 @@ ndpop = org.moeaframework.core.NondominatedPopulation(pop);
 oe = cell(pop.size(),1);
 ninstallments = zeros(pop.size(),1);
 stdinc = zeros(pop.size(),1);
+stdsa = zeros(pop.size(),1);
+diffRaan = zeros(pop.size(),1);
 uniqueRAAN = zeros(pop.size(),1);
 for i = 0 : pop.size-1
     sats = pop.get(i).getVariable(0).getSatelliteVariables();
@@ -28,9 +30,11 @@ for i = 0 : pop.size-1
         m(j+1,6) = sats.get(j).getTrueAnomaly;
     end
     oe{i+1} = m;
+    stdsa(i+1) = std(m(:,1));
     stdinc(i+1) = std(m(:,3));
+    diffRaan(i+1) = mean(diff(sort(m(:,4))));
     uniqueRAAN(i+1) = length(unique(m(:,4)));
-%     ninstallments(i+1) = pop.get(i).getVariable(0).getDeploymentStrategy.getInstallments.size();
+    ninstallments(i+1) = pop.get(i).getVariable(0).getDeploymentStrategy.getInstallments.size();
 end
 
 nsolns = pop.size;

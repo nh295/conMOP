@@ -136,7 +136,7 @@ public class ConstellationDeployment {
         double relativePrecessionRate = FastMath.abs(Orbits.nodalPrecession(sat1.getSma(), sat1.getEcc(), sat1.getInc())
                 - Orbits.nodalPrecession(sat2.getSma(), sat2.getEcc(), sat2.getInc()));
 
-        return deltaRaan < relativePrecessionRate * time;
+        return deltaRaan <= relativePrecessionRate * time;
     }
 
 }

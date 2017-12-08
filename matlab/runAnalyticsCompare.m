@@ -5,7 +5,7 @@ path = '/Users/nozomihitomi/Dropbox/conMOP/results_kd4/metrics/';
 load(strcat(path,'ki.mat'));
 
 nexperiments = 3;
-ntrials = 8;
+ntrials = 3;
 hv = zeros(nexperiments,size(HV,1),ntrials);
 igd = zeros(nexperiments,size(IGD,1),ntrials);
 hv(1,:,:) = HV(:,1:ntrials);
@@ -15,13 +15,13 @@ load(strcat(path,'kd.mat'));
 hv(2,:,:) = HV(:,1:ntrials);
 igd(2,:,:) = IGD(:,1:ntrials);
 
-load(strcat(path,'ki_walker.mat'));
+load(strcat(path,'ki_walker2.mat'));
+hv(2,:,:) = HV(:,1:ntrials);
+igd(2,:,:) = IGD(:,1:ntrials);
+% 
+load(strcat(path,'kd_walker2.mat'));
 hv(3,:,:) = HV(:,1:ntrials);
 igd(3,:,:) = IGD(:,1:ntrials);
-% 
-% load(strcat(path,'kd_walker.mat'));
-% hv(4,:,:) = HV(:,1:ntrials);
-% igd(4,:,:) = IGD(:,1:ntrials);
 
 dataPoints = size(HV,1);
 base_experiment_metric_sigHV = zeros(dataPoints,nexperiments-1);
@@ -60,7 +60,7 @@ end
 %plot standard dev areas
  colors = {
     [0         0.4470    0.7410]
-    [0.8500    0.3250    0.0980]
+%     [0.8500    0.3250    0.0980]
     [0.9290    0.6940    0.1250]
     [0.4940    0.1840    0.5560]
     [0.4660    0.6740    0.1880]
