@@ -17,11 +17,6 @@
             <version>2.12</version>
         </dependency>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>orekit</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
             <groupId>seaklab</groupId>
             <artifactId>SystemArchitectureProblems</artifactId>
             <version>0.0</version>
@@ -30,6 +25,11 @@
             <groupId>com.github.seaklab</groupId>
             <artifactId>mopAOS</artifactId>
             <version>0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>orekit</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
     <properties>
