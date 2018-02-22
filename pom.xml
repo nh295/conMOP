@@ -7,11 +7,6 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
-            <groupId>org.seak</groupId>
-            <artifactId>mopAOS</artifactId>
-            <version>0.0</version>
-        </dependency>
-        <dependency>
             <groupId>org.orekit</groupId>
             <artifactId>orekit</artifactId>
             <version>8.0</version>
@@ -29,6 +24,11 @@
         <dependency>
             <groupId>seaklab</groupId>
             <artifactId>SystemArchitectureProblems</artifactId>
+            <version>0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.seaklab</groupId>
+            <artifactId>mopAOS</artifactId>
             <version>0.0</version>
         </dependency>
     </dependencies>
