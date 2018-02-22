@@ -5,20 +5,12 @@
  */
 package seak.conmop;
 
-import aos.IO.AOSHistoryIO;
 import aos.aos.AOSMOEA;
-import aos.aos.AOSStrategy;
-import aos.creditassigment.ICreditAssignment;
-import aos.creditassignment.setcontribution.ArchiveContribution;
-import aos.creditassignment.setimprovement.OffspringArchiveDominance;
-import aos.nextoperator.IOperatorSelector;
-import aos.operator.AOSVariation;
 import aos.operatorselectors.AdaptivePursuit;
+import aos.operatorselectors.OperatorSelector;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Properties;
@@ -33,17 +25,13 @@ import org.moeaframework.core.Initialization;
 import org.moeaframework.core.Population;
 import org.moeaframework.core.PopulationIO;
 import org.moeaframework.core.Problem;
-import org.moeaframework.core.Solution;
 import org.moeaframework.core.Variation;
 import org.moeaframework.core.comparator.DominanceComparator;
 import org.moeaframework.core.comparator.ParetoDominanceComparator;
 import org.moeaframework.core.operator.CompoundVariation;
 import org.moeaframework.core.operator.RandomInitialization;
 import org.moeaframework.core.operator.TournamentSelection;
-import org.moeaframework.core.operator.binary.BitFlip;
-import org.moeaframework.core.operator.real.PM;
 import org.moeaframework.core.operator.real.SBX;
-import org.moeaframework.util.Vector;
 import org.orekit.bodies.BodyShape;
 import org.orekit.bodies.GeodeticPoint;
 import org.orekit.bodies.OneAxisEllipsoid;
@@ -58,33 +46,25 @@ import org.orekit.time.TimeScale;
 import org.orekit.time.TimeScalesFactory;
 import org.orekit.utils.Constants;
 import org.orekit.utils.IERSConventions;
-import seak.architecture.enumeration.FullFactorial;
-import seak.conmop.launch.DeltaV;
-import seak.conmop.launch.LaunchStage;
-import seak.conmop.launch.LaunchVehicle;
-import seak.conmop.operators.BinaryUniformCrossover;
 import seak.conmop.operators.OrbitElementOperator;
-import seak.conmop.operators.RandomWalkerInitialization;
-import seak.conmop.operators.RepairNumberOfSatellites;
-import seak.conmop.operators.StaticOrbitElementOperator;
-import seak.conmop.operators.StaticLengthOnePointCrossover;
 import seak.conmop.operators.VariableLengthOnePointCrossover;
 import seak.conmop.operators.VariablePM;
 import seak.conmop.operators.knowledge.DecreasePlanes;
 import seak.conmop.operators.knowledge.DistributeAnomaly;
 import seak.conmop.operators.knowledge.DistributePlanes;
 import seak.conmop.operators.knowledge.IncreasePlanes;
-import seak.conmop.propulsion.Propellant;
 import seak.conmop.util.Bounds;
-import seak.orekit.STKGRID;
 import seak.orekit.object.CommunicationBand;
 import seak.orekit.object.CoverageDefinition;
 import seak.orekit.object.CoveragePoint;
 import seak.orekit.object.GndStation;
 import seak.orekit.object.communications.ReceiverAntenna;
 import seak.orekit.object.communications.TransmitterAntenna;
-import seak.orekit.util.Orbits;
 import seak.orekit.util.OrekitConfig;
+import aos.creditassignment.setimprovement.SetImprovementDominance;
+import aos.history.AOSHistoryIO;
+import aos.operator.AOSVariation;
+import aos.operator.AOSVariationSI;
 
 /**
  *
@@ -171,9 +151,8 @@ public class Search {
             DominanceComparator comparator = new ParetoDominanceComparator();
             EpsilonBoxDominanceArchive archive = new EpsilonBoxDominanceArchive(new double[]{30, 1, 100, 30});
             final TournamentSelection selection = new TournamentSelection(2, comparator);
-            AOSVariation variation = new AOSVariation();
             EpsilonMOEA emoea = new EpsilonMOEA(problem, population, archive,
-                    selection, variation, initialization, comparator);
+                    selection, null, initialization, comparator);
 
             //set up variations
             //example of operators you might use
@@ -198,14 +177,14 @@ public class Search {
 //                            new RepairNumberOfSatellites()));
 
             //create operator selector
-            IOperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.03);
+            OperatorSelector operatorSelector = new AdaptivePursuit(operators, 0.8, 0.8, 0.03);
 
             //create credit assignment
-            ICreditAssignment creditAssignment = new OffspringArchiveDominance(1, 0);
+            SetImprovementDominance creditAssignment = new SetImprovementDominance(archive, 1, 0);
 
             //create AOS
-            AOSStrategy aosStrategy = new AOSStrategy(creditAssignment, operatorSelector);
-            AOSMOEA aos = new AOSMOEA(emoea, variation, aosStrategy, true);
+            AOSVariation aosStrategy = new AOSVariationSI(operatorSelector, creditAssignment, populationSize);
+            AOSMOEA aos = new AOSMOEA(emoea, aosStrategy, true);
 
             System.out.println(String.format("Initializing population... Size = %d", populationSize));
             while (aos.getNumberOfEvaluations() < maxNFE) {
